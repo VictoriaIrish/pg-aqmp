@@ -44,3 +44,9 @@ trs_PG_data_captures <- get_captures(param = c('trs'),
                                      years = 2010:2023,
                                      merge_Stations = TRUE) %>%
   filter(., station_name %in% "Prince George Plaza 400")
+
+#example retrieves stat summaries - THIS ALSO DOES NOT WORK
+stats_result <- get_stats(param = 'pm25',
+                          years = 2010:2023,
+                          add_TFEE = TRUE,
+                          merge_Stations = TRUE)
