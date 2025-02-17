@@ -104,7 +104,8 @@ data_24hr <- data_24hr_wide |>
   arrange(param, date) |>
   mutate(date = as.Date(date, tz = "Etc/GMT+8"),
          value = round(value, 1)) |>
-  left_join(data_24hr_meta, by = c('date', 'param'))
+  left_join(data_24hr_meta, by = c('date', 'param'))|>
+  filter(date >= as.Date("2015-01-01"))
 
 save(data_24hr, file = "data/data_24hr.rds")
 
@@ -114,7 +115,8 @@ data_1y <- data_1y_wide |>
   arrange(param, date)|>
   left_join(data_24hr_meta |> select(-flag_tfee), by = c('date', 'param')) |>
   mutate(date = as.integer(format(date, "%Y")),
-         value = round(value, 1))
+         value = round(value, 1)) |>
+  filter(date <= 2024)
 
 save(data_1y, file = "data/data_1y.rds")
 
@@ -131,6 +133,35 @@ save(data_season, file = "data/data_season.rds")
 
 rm(list = ls(pattern = "wide"))
 rm(list = ls(pattern = "meta"))
+
+#------------------------------------------------------
+# add tf_ee for 2024 to data_1hr and data_24hr
+#------------------------------------------------------
+
+# read in tfee for prince george (2010:2024). tfee in envair starts in 2017
+tfee <- read.csv(file = "data/tfee_log.csv") |>
+  filter(station_name == "Prince George Plaza 400") |>
+  select(date, station_name) |>
+  mutate(date = as.Date(date, tz = "Etc/GMT+8"),
+         flag_tfee = TRUE
+         )
+
+
+data_1hr <- data_1hr |>
+  left_join(tfee,
+            by = c('date', 'station_name', 'flag_tfee'),
+            relationship = 'many-to-many')
+
+data_24hr <- data_24hr |>
+  left_join(tfee,
+            by = c('date', 'station_name', 'flag_tfee')
+            )
+
+#------------------------------------------------------
+# clean up: remove tfee
+#------------------------------------------------------
+
+rm(tfee)
 
 #------------------------------------------------------
 # data capture summary
