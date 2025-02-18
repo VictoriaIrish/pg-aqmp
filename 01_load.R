@@ -23,6 +23,10 @@ data_1hr_original <- params |>
   purrr::map_dfr(~importBC_data(., 2015:2024, flag_TFEE = TRUE)) |>
   filter(grepl("Plaza", STATION_NAME))
 
+# correct datetime stamps to PST ("Etc/GMT+8")
+tz(data_1hr_original$DATETIME) <- "Etc/GMT+8"
+tz(data_1hr_original$DATE_PST) <- "Etc/GMT+8"
+
 saveRDS(data_1hr_original, file = "data/data_1hr_original.rds")
 
 
