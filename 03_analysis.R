@@ -213,7 +213,7 @@ count_above_threshold %>%
   geom_bar(stat = "identity") +  # Use stat = "identity" to map y directly to values
   geom_text(aes(label = count_above_threshold), vjust = -0.3) +  # Add labels on top of the bars
   scale_x_continuous(breaks = count_above_threshold$year) +  # Specify breaks to show each year as a tick
-  labs(x = "Year", y = expression(paste("Days 24-hr average", PM[2.5], "above CAAQS"))) +
+  labs(x = "Year", y = expression(paste("Number of days 24-hr average ", PM[2.5], " above CAAQS"))) +
   theme_minimal()
 
 
