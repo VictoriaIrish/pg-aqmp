@@ -159,6 +159,22 @@ ggsave("data_1y_plot.png",
        dpi = 300
 )
 
+
+#Plot advisory days
+ADVISORYDAYS %>%
+  ggplot(aes(x = Year, y = AdvisoryDays, fill = Region)) +
+  geom_bar(stat = "identity", position = "identity") +
+  scale_fill_manual(
+    values = c("OminecaPeace" = "lightblue", "PrinceGeorge" = "salmon", "Province" = "seagreen3"), # Custom colors
+    labels = c("Omineca Peace", "Prince George", "Province")  # Custom legend labels
+  ) +
+  labs(title = "Number of Advisory Days",
+       x = "Year",
+       y = "Number of Advisory Days",
+       fill = " ") +
+  scale_x_continuous(breaks = ADVISORYDAYS$Year) +
+  theme_minimal()
+
 # Calculate the percent change in PM2.5 by season
 seasonal_percent_change <- data_season %>%
   filter(param == "pm25") %>%
@@ -166,26 +182,18 @@ seasonal_percent_change <- data_season %>%
     percent_change = c(NA, diff(value) / head(value, -1) * 100)  # Calculate percent change
   )
 
-#Plot % change in seasonal PM2.5
-seasonal_percent_change %>%
-  ggplot(aes(x = date, y = percent_change)) +
-  geom_point() +
-  labs(x = "Year", y = "Seasonal percent change")
 
-#Or a lollipop plot?
-ggplot(seasonal_percent_change, aes(x = date, y = percent_change, label = format(percent_change, digits = 1))) +
-  geom_point(stat='identity', fill="black", size = 8)  +
-  geom_segment(aes(y = 0,
-                   x = date,
-                   yend = percent_change,
-                   xend = date),
-               color = "black") +
-  geom_text(color="white", size = 3) +
-  labs(x = "Year",
-       y = "Seasonal percent change")
+#Plot days above threshold for each year
+count_above_threshold %>%
+  ggplot(aes(x = year, y = count_above_threshold)) +
+  geom_bar(stat = "identity") +  # Use stat = "identity" to map y directly to values
+  geom_text(aes(label = count_above_threshold), vjust = -0.3) +  # Add labels on top of the bars
+  scale_x_continuous(breaks = count_above_threshold$year) +  # Specify breaks to show each year as a tick
+  labs(x = "Year", y = expression(paste("Number of days 24-hr average ", PM[2.5], " above CAAQS"))) +
+  theme_minimal()
 
 #Count how many days were above CAAQS each year
-# Count days with values above 28 for 2015-2019 and above 27 for 2020-2024
+# Count days with values above 28 for 2015-2019 and above 27 for 2020-2024 without influence of wildfire
 count_above_threshold <- data_24hr %>%
   filter(param == "pm25") %>%
   mutate(
@@ -204,16 +212,22 @@ count_above_threshold <- data_24hr %>%
     count_above_threshold = sum(value > threshold, na.rm = TRUE)
   )
 
-# View the result
-print(count_above_threshold)
 
-#Plot days above threshold for each year
-count_above_threshold %>%
-  ggplot(aes(x = year, y = count_above_threshold)) +
-  geom_bar(stat = "identity") +  # Use stat = "identity" to map y directly to values
-  geom_text(aes(label = count_above_threshold), vjust = -0.3) +  # Add labels on top of the bars
-  scale_x_continuous(breaks = count_above_threshold$year) +  # Specify breaks to show each year as a tick
-  labs(x = "Year", y = expression(paste("Number of days 24-hr average ", PM[2.5], " above CAAQS"))) +
-  theme_minimal()
+###NEED TO FIGURE OUT CUMULATIVE PERCENT CHANGE RATHER THAN ONLY % CHANGE###
+#Plot % change in seasonal PM2.5
+seasonal_percent_change %>%
+  ggplot(aes(x = date, y = percent_change)) +
+  geom_point() +
+  labs(x = "Year", y = "Seasonal percent change")
 
-
+#Or a lollipop plot?
+ggplot(seasonal_percent_change, aes(x = date, y = percent_change, label = format(percent_change, digits = 1))) +
+  geom_point(stat='identity', fill="black", size = 8)  +
+  geom_segment(aes(y = 0,
+                   x = date,
+                   yend = percent_change,
+                   xend = date),
+               color = "black") +
+  geom_text(color="white", size = 3) +
+  labs(x = "Year",
+       y = "Seasonal percent change")
