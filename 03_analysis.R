@@ -291,56 +291,121 @@ ggsave("data_1y_trs_plot.png",
 )
 
 #-----------------------------------------------------------------------
-# Number of days TRS above PCO
+# Number of days PM25, PM10 and TRS above AQO or PCO
 #-----------------------------------------------------------------------
-#Count how many days TRS were above 2ppb each year ###NEED TO ACCOUNT FOR LEAP YEARs###
-count_above_threshold_24trs <- data_24hr %>%
-  filter(param == "trs") %>%
-  # Count the number of days per year where the value exceeds 2ppb
-  group_by(year) %>%
-  reframe(count_above_threshold_24trs = sum(value > 2, na.rm = TRUE),
-    percent_days_above_24trs_threshold = (count_above_threshold_24trs / 365)*100)
 
-
-#Plot days above threshold for each year
-count_above_threshold_24trs %>%
-  ggplot(aes(x = year, y = percent_days_above_24trs_threshold)) +
-  geom_bar(stat = "identity") +  # Use stat = "identity" to map y directly to values
-  geom_text(aes(label = label_number(accuracy = 1)(percent_days_above_24trs_threshold)),
-            vjust = -0.3) +  # Add labels with 2 significant figures
-  #geom_text(aes(label = percent_days_above_24trs_threshold), vjust = -0.3) +  # Add labels on top of the bars
-  scale_x_continuous(breaks = count_above_threshold_24trs$year) +  # Specify breaks to show each year as a tick
-  labs(x = "Year", y = "Percent days 24-hr average TRS above PCO") +
-  theme_minimal()
-
-
-
-
-
-
-###NEED TO FIGURE OUT CUMULATIVE PERCENT CHANGE RATHER THAN ONLY % CHANGE###
-
-# Calculate the percent change in PM2.5 by season
-seasonal_percent_change <- data_season %>%
-  filter(param == "pm25") %>%
+#For each year calculate the % above or below (percent_diff) the AQO or PCO the value is for each day (PM2.5 (25ug/m3) and PM10 (50ug/m3) and BC PCO for TRS (3ug/m3 or 2 ppb))
+PERCENT_DIFF_AQO <- data_24hr %>%
+  filter(param %in% c("pm25", "pm10", "trs")) %>%
   mutate(
-    percent_change = c(NA, diff(value) / head(value, -1) * 100)  # Calculate percent change
+    percent_diff = case_when(
+      param == "pm25" ~ ((value - 25) / 25) * 100,  # AQO for pm25 is 25
+      param == "pm10" ~ ((value - 50) / 50) * 100,  # AQO for pm10 is 50
+      param == "trs" ~ ((value - 2) / 2) * 100,     # AQO for trs is 2
+      TRUE ~ NA_real_  # Handle any other unexpected cases
+    ),
+    # Create a new column for whether the value is above the AQO
+    above_aqo = case_when(
+      param == "pm25" & value > 25 ~ 1,  # AQO for PM2.5 is 25 ug/m³
+      param == "pm10" & value > 50 ~ 1,  # AQO for PM10 is 50 ug/m³
+      param == "trs" & value > 2 ~ 1,    # PCO TRS is 2 ppb
+      TRUE ~ 0  # 0 if it's not above the AQO
+    )
   )
 
-#Plot % change in seasonal PM2.5
-seasonal_percent_change %>%
-  ggplot(aes(x = date, y = percent_change)) +
-  geom_point() +
-  labs(x = "Year", y = "Seasonal percent change")
+#Plot the 24hr percent difference from AQO and PCO
+PERCENTDIFF24HRPLOT <- ggplot(PERCENT_DIFF_AQO, aes(x = date, y = percent_diff, colour = param)) +
+  geom_line() +
+  geom_hline(yintercept = 0, col = "red", linetype = "dashed") +
+  labs(x = "Date", y = "Percent above or below AQO or PCO", colour = "Parameter") +
+  scale_color_manual(values = c("pm25" = "blue", "pm10" = "salmon", "trs" = "seagreen"),
+                     labels = c("PM2.5", "PM10", "TRS"))
 
-#Or a lollipop plot?
-ggplot(seasonal_percent_change, aes(x = date, y = percent_change, label = format(percent_change, digits = 1))) +
-  geom_point(stat='identity', fill="black", size = 8)  +
-  geom_segment(aes(y = 0,
-                   x = date,
-                   yend = percent_change,
-                   xend = date),
-               color = "black") +
-  geom_text(color="white", size = 3) +
-  labs(x = "Year",
-       y = "Seasonal percent change")
+ggsave("percent_diff_24hr_plot.png",
+       plot = PERCENTDIFF24HRPLOT,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
+
+#Calculate percentage of days in each year the 24hr values were over the AQO or PCO
+PERCENT_DAYS_ABOVE_AQO <- PERCENT_DIFF_AQO %>%
+  group_by(year, param) %>%
+  summarise(
+    total_days = n_distinct(date),  # Total number of days in the year
+    days_above_aqo = sum(above_aqo),  # Number of days above AQO
+    percent_above_aqo = (days_above_aqo / total_days) * 100  # Percentage of days above AQO
+  ) %>%
+  ungroup()
+
+#Plot percent of days in each year the conc for each pollutant was above AQO or PCO
+PERCENTABOVEAQOPLOT <- ggplot(PERCENT_ABOVE_AQO, aes(x = year, y = percent_above_aqo, colour = param)) +
+  geom_line() +
+  scale_x_continuous(breaks = PERCENT_ABOVE_AQO$year) + # Specify breaks to show each year as a tick
+  labs(x = "Year", y = "Percent days in each year pollutant above AQO or PCO", colour = "Parameter") +
+  scale_color_manual(values = c("pm25" = "blue", "pm10" = "salmon", "trs" = "seagreen"),
+                     labels = c("PM2.5", "PM10", "TRS"))
+
+ggsave("percent_above_aqo_plot.png",
+       plot = PERCENTABOVEAQOPLOT,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
+
+
+
+
+
+
+# #Count how many days TRS were above 2ppb each year ###NEED TO ACCOUNT FOR LEAP YEARs###
+# count_above_threshold_24trs <- data_24hr %>%
+#   filter(param == "trs") %>%
+#   # Count the number of days per year where the value exceeds 2ppb
+#   group_by(year) %>%
+#   reframe(count_above_threshold_24trs = sum(value > 2, na.rm = TRUE),
+#           percent_days_above_24trs_threshold = (count_above_threshold_24trs / 365)*100)
+#
+#
+# #Plot days above threshold for each year
+# count_above_threshold_24trs %>%
+#   ggplot(aes(x = year, y = percent_days_above_24trs_threshold)) +
+#   geom_bar(stat = "identity") +  # Use stat = "identity" to map y directly to values
+#   geom_text(aes(label = label_number(accuracy = 1)(percent_days_above_24trs_threshold)),
+#             vjust = -0.3) +  # Add labels with 2 significant figures
+#   #geom_text(aes(label = percent_days_above_24trs_threshold), vjust = -0.3) +  # Add labels on top of the bars
+#   scale_x_continuous(breaks = count_above_threshold_24trs$year) +  # Specify breaks to show each year as a tick
+#   labs(x = "Year", y = "Percent days 24-hr average TRS above PCO") +
+#   theme_minimal()
+
+
+# ###NEED TO FIGURE OUT CUMULATIVE PERCENT CHANGE RATHER THAN ONLY % CHANGE###
+#
+# # Calculate the percent change in PM2.5 by season
+# seasonal_percent_change <- data_season %>%
+#   filter(param == "pm25") %>%
+#   mutate(
+#     percent_change = c(NA, diff(value) / head(value, -1) * 100)  # Calculate percent change
+#   )
+#
+# #Plot % change in seasonal PM2.5
+# seasonal_percent_change %>%
+#   ggplot(aes(x = date, y = percent_change)) +
+#   geom_point() +
+#   labs(x = "Year", y = "Seasonal percent change")
+#
+# #Or a lollipop plot?
+# ggplot(seasonal_percent_change, aes(x = date, y = percent_change, label = format(percent_change, digits = 1))) +
+#   geom_point(stat='identity', fill="black", size = 8)  +
+#   geom_segment(aes(y = 0,
+#                    x = date,
+#                    yend = percent_change,
+#                    xend = date),
+#                color = "black") +
+#   geom_text(color="white", size = 3) +
+#   labs(x = "Year",
+#        y = "Seasonal percent change")
