@@ -90,7 +90,11 @@ data_1hr <- data_1hr |>
          time = factor(paste0(hour(date_hour_begin), ":00"), levels = paste0(0:23, ":00")),
          year = year(date_hour_begin),
          month = factor(month(date_hour_begin, label = TRUE, abbr = TRUE), levels = month.abb[1:12]),
-         param = factor(param)) |>
+         param = factor(param),
+         #Calculate the rolling 8hr average for O3 only
+         rolling8hrO3 = if_else(param == "o3",
+                                zoo::rollapply(rounded_value, width = 8, FUN = mean, align = "right", fill = NA),
+                                rounded_value)) |>
   select(station_name,
          date_hour_end,
          date_hour_begin,
@@ -101,6 +105,7 @@ data_1hr <- data_1hr |>
          param,
          raw_value,
          rounded_value,
+         rolling8hrO3,
          unit,
          instrument,
          validation_status)
