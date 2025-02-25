@@ -37,7 +37,7 @@ DATACAP1MPLOT <- data_cap_1m %>%
     strip.text.y = element_text(angle = 0),
     axis.text.x = element_text(angle = 0),
     legend.position = "none")
-
+DATACAP1MPLOT
 ggsave("data_cap_1m_plot.png",
        plot = DATACAP1MPLOT,
        path = figure_path,
@@ -291,12 +291,12 @@ ggsave("data_1y_trs_plot.png",
 )
 
 #-----------------------------------------------------------------------
-# Number of days PM25, PM10 and TRS above AQO or PCO
+# Number of days PM25, PM10 and TRS, and NO2, SO2 and O3 above AQO or PCO
 #-----------------------------------------------------------------------
 
 #For each year calculate the % above or below (percent_diff) the AQO or PCO the value is for each day (PM2.5 (25ug/m3) and PM10 (50ug/m3) and BC PCO for TRS (3ug/m3 or 2 ppb))
 PERCENT_DIFF_AQO <- data_24hr %>%
-#  filter(param %in% c("pm25", "pm10", "trs")) %>%
+  filter(param %in% c("pm25", "pm10", "trs")) %>%
   mutate(
     percent_diff = case_when(
       param == "pm25" ~ ((value - 25) / 25) * 100,  # AQO for pm25 is 25
@@ -330,8 +330,8 @@ ggsave("percent_diff_24hr_plot.png",
        dpi = 300
 )
 
-#Calculate percentage of days in each year the 24hr values were over the AQO or PCO
-PERCENT_DAYS_ABOVE_AQO <- PERCENT_DIFF_AQO %>%
+#Calculate percentage of days in each year the 24hr values were over the AQO or PCO for pm25,pm10 and trs
+PERCENT_DAYS_ABOVE_AQO_PM_TRS <- PERCENT_DIFF_AQO %>%
   group_by(year, param) %>%
   summarise(
     total_days = n_distinct(date),  # Total number of days in the year
@@ -340,13 +340,38 @@ PERCENT_DAYS_ABOVE_AQO <- PERCENT_DIFF_AQO %>%
   ) %>%
   ungroup()
 
+#calculate percentage of days in each year the 1hr values were over AQO fro no2, so2 and o3
+#For each year calculate the % above or below (percent_diff) the AQO or PCO the value is for each day (PM2.5 (25ug/m3) and PM10 (50ug/m3) and BC PCO for TRS (3ug/m3 or 2 ppb))
+PERCENT_DAYS_ABOVE_AQO_NO2_SO2_O3 <- data_1hr %>%
+  filter(param %in% c("no2", "so2", "o3")) %>%
+  mutate(
+    # Create a new column for whether the value is above the AQO
+    above_aqo = case_when(
+      param == "no2" & rounded_value > 60 ~ 1,  # AQO for no2 is 60ppb
+      param == "so2" & rounded_value > 75 ~ 1,  # AQO for so2 is 75ppb
+      param == "o3" & rolling8hrO3 > 62 ~ 1,    # AQO for o3 is 62ppb
+      TRUE ~ 0  # 0 if it's not above the AQO
+    )
+  ) %>%
+  group_by(year, param) %>%
+  summarise(
+    total_days = n_distinct(date),  # Total number of days in the year
+    days_above_aqo = sum(above_aqo),  # Number of days above AQO
+    percent_above_aqo = (days_above_aqo / total_days) * 100  # Percentage of days above AQO
+  ) %>%
+  ungroup()
+
+#JOIN PERCENT_DAYS_ABOVE_AQO_PM_TRS AND PERCENT_DAYS_ABOVE_AQO_NO2_SO2_O3
+PERCENT_DAYS_ABOVE_AQO_JOINED <- PERCENT_DAYS_ABOVE_AQO_PM_TRS %>%
+  full_join(PERCENT_DAYS_ABOVE_AQO_NO2_SO2_O3, by = c("year", "param", "total_days", "days_above_aqo", "percent_above_aqo"))
+
 #Plot percent of days in each year the conc for each pollutant was above AQO or PCO
-PERCENTABOVEAQOPLOT <- ggplot(PERCENT_ABOVE_AQO, aes(x = year, y = percent_above_aqo, colour = param)) +
+PERCENTABOVEAQOPLOT <- ggplot(PERCENT_DAYS_ABOVE_AQO_JOINED, aes(x = year, y = percent_above_aqo, colour = param)) +
   geom_line() +
-  scale_x_continuous(breaks = PERCENT_ABOVE_AQO$year) + # Specify breaks to show each year as a tick
-  labs(x = "Year", y = "Percent days in each year pollutant above AQO or PCO", colour = "Parameter") +
-  scale_color_manual(values = c("pm25" = "blue", "pm10" = "salmon", "trs" = "seagreen"),
-                     labels = c("PM2.5", "PM10", "TRS"))
+  scale_x_continuous(breaks = PERCENT_DAYS_ABOVE_AQO_JOINED$year) + # Specify breaks to show each year as a tick
+  labs(x = "Year", y = "Percent days contaminant above threshold", colour = "Parameter")
+  #scale_color_manual(values = c("pm25" = "blue", "pm10" = "salmon", "trs" = "seagreen"),
+  #                   labels = c("PM2.5", "PM10", "TRS"))
 PERCENTABOVEAQOPLOT
 ggsave("percent_above_aqo_plot.png",
        plot = PERCENTABOVEAQOPLOT,
