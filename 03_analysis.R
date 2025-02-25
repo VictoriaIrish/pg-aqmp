@@ -296,7 +296,7 @@ ggsave("data_1y_trs_plot.png",
 
 #For each year calculate the % above or below (percent_diff) the AQO or PCO the value is for each day (PM2.5 (25ug/m3) and PM10 (50ug/m3) and BC PCO for TRS (3ug/m3 or 2 ppb))
 PERCENT_DIFF_AQO <- data_24hr %>%
-  filter(param %in% c("pm25", "pm10", "trs")) %>%
+#  filter(param %in% c("pm25", "pm10", "trs")) %>%
   mutate(
     percent_diff = case_when(
       param == "pm25" ~ ((value - 25) / 25) * 100,  # AQO for pm25 is 25
@@ -347,7 +347,7 @@ PERCENTABOVEAQOPLOT <- ggplot(PERCENT_ABOVE_AQO, aes(x = year, y = percent_above
   labs(x = "Year", y = "Percent days in each year pollutant above AQO or PCO", colour = "Parameter") +
   scale_color_manual(values = c("pm25" = "blue", "pm10" = "salmon", "trs" = "seagreen"),
                      labels = c("PM2.5", "PM10", "TRS"))
-
+PERCENTABOVEAQOPLOT
 ggsave("percent_above_aqo_plot.png",
        plot = PERCENTABOVEAQOPLOT,
        path = figure_path,
