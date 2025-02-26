@@ -37,7 +37,7 @@ DATACAP1MPLOT <- data_cap_1m %>%
     strip.text.y = element_text(angle = 0),
     axis.text.x = element_text(angle = 0),
     legend.position = "none")
-
+DATACAP1MPLOT
 ggsave("data_cap_1m_plot.png",
        plot = DATACAP1MPLOT,
        path = figure_path,
@@ -62,7 +62,7 @@ DATACAPSEASONPLOT <- data_cap_season %>%
     strip.text.y = element_text(angle = 0),
     axis.text.x = element_text(angle = 0),
     legend.position = "none")
-
+DATACAPSEASONPLOT
 
 ggsave("data_cap_season_plot.png",
        plot = DATACAPSEASONPLOT,
@@ -85,7 +85,7 @@ DATACAP1YPLOT <- data_cap_1y %>%
     strip.text.y = element_text(angle = 0),
     axis.text.x = element_text(angle = 0),
     legend.position = "none")
-
+DATACAP1YPLOT
 ggsave("data_cap_1y_plot.png",
        plot = DATACAP1YPLOT,
        path = figure_path,
@@ -184,41 +184,10 @@ ADVISORYDAYS %>%
   scale_x_continuous(breaks = ADVISORYDAYS$Year) +
   theme_minimal()
 
-#-------------------------------------------------------------------------
-# Days above 24hr CAAQS pm2.5
-#-------------------------------------------------------------------------
 
-#Count how many days were above CAAQS each year
-# Count days with values above 28 for 2015-2019 and above 27 for 2020-2024 excluding wildfire days
-count_above_threshold <- data_24hr %>%
-  filter(param == "pm25", flag_tfee == "FALSE") %>%
-  mutate(
-    # Create a new column for the threshold based on year
-    threshold = case_when(
-      year >= 2015 & year <= 2019 ~ 28,
-      year >= 2020 & year <= 2024 ~ 27,
-      TRUE ~ NA_real_
-    )
-  ) %>%
-  # Filter out rows where the threshold is NA (i.e., outside 2015-2024 range)
-  filter(!is.na(threshold)) %>%
-  # Count the number of days per year where the value exceeds the threshold
-  group_by(year) %>%
-  summarise(
-    count_above_threshold = sum(value > threshold, na.rm = TRUE)
-  )
-
-#Plot days above threshold for each year
-count_above_threshold %>%
-  ggplot(aes(x = year, y = count_above_threshold)) +
-  geom_bar(stat = "identity") +  # Use stat = "identity" to map y directly to values
-  geom_text(aes(label = count_above_threshold), vjust = -0.3) +  # Add labels on top of the bars
-  scale_x_continuous(breaks = count_above_threshold$year) +  # Specify breaks to show each year as a tick
-  labs(x = "Year", y = expression(paste("Number of days 24-hr average ", PM[2.5], " above CAAQS"))) +
-  theme_minimal()
 
 #------------------------------------------------------------------------
-#TRS
+#TRS visualisation
 #------------------------------------------------------------------------
 #Plot 24hr trs average
 DATA24HRTRSPLOT <- data_24hr %>%
@@ -291,12 +260,135 @@ ggsave("data_1y_trs_plot.png",
 )
 
 #-----------------------------------------------------------------------
-# Number of days PM25, PM10 and TRS above AQO or PCO
+# Number of days PM25, PM10 and TRS, and NO2, SO2 and O3 above AQO or PCO
 #-----------------------------------------------------------------------
+#Calculate percentage of days in each year the 24hr values were over the AQO or PCO for pm25,pm10 and trs
+PERCENT_DAYS_ABOVE_AQO_PM_TRS <- data_24hr %>%
+  filter(param %in% c("pm25", "pm10", "trs")) %>%
+  mutate(
+    # Create a new column for whether the value is above the AQO
+    above_aqo = case_when(
+      param == "pm25" & value > 25 ~ 1,  # AQO for PM2.5 is 25 ug/m³
+      param == "pm10" & value > 50 ~ 1,  # AQO for PM10 is 50 ug/m³
+      param == "trs" & value > 2 ~ 1,    # PCO TRS is 2 ppb
+      TRUE ~ 0  # 0 if it's not above the AQO
+    )
+  ) %>%
+  # Extract the year from the date column in the data_cap_1y dataframe
+  left_join(
+    data_cap_1y %>%
+      mutate(year_from_date = as.integer(format(as.Date(date), "%Y"))),  # Extract year from date
+    by = c("year" = "year_from_date", "param")  # Join on the extracted year and param
+  ) %>%
+  group_by(year, param) %>%
+  summarise(
+    total_days = sum(!is.na(value)),  # Total number of days in the year
+    days_above_aqo = sum(above_aqo),  # Number of days above AQO
+    percent_above_aqo = ifelse(
+      sum(!is.na(value) & !is.na(data_cap_percent) & data_cap_percent >= 75) > 0,
+      (days_above_aqo / total_days) * 100,  # Calculate percentage if data capture is sufficient
+      NA_real_  # Set to NA if data capture is below 75% or missing
+    )
+  ) %>%
+  ungroup()
+
+#calculate percentage of hours in each year the 1hr values were over AQO for no2, so2 and o3
+PERCENT_DAYS_ABOVE_AQO_NO2_SO2_O3 <- data_1hr %>%
+  filter(param %in% c("no2", "so2", "o3")) %>%
+  mutate(
+    # Create a new column for whether the value is above the AQO
+    above_aqo = case_when(
+      param == "no2" & rounded_value > 60 ~ 1,  # AQO for no2 is 60ppb
+      param == "so2" & rounded_value > 75 ~ 1,  # AQO for so2 is 75ppb
+      param == "o3" & rolling8hrO3 > 62 ~ 1,    # AQO for o3 is 62ppb
+      TRUE ~ 0  # 0 if it's not above the AQO
+    )
+  ) %>%
+  # Extract the year from the date column in the data_cap_1y dataframe
+  left_join(
+    data_cap_1y %>%
+      mutate(year_from_date = as.integer(format(as.Date(date), "%Y"))),  # Extract year from date
+    by = c("year" = "year_from_date", "param")  # Join on the extracted year and param
+  ) %>%
+  group_by(year, param) %>%
+  summarise(
+    total_hours = sum(!is.na(rounded_value)),  # Total number of days in the year
+    hours_above_aqo = sum(above_aqo),  # Number of days above AQO
+    percent_above_aqo = ifelse(
+      sum(!is.na(rounded_value) & !is.na(data_cap_percent) & data_cap_percent >= 75) > 0,
+      (hours_above_aqo / total_hours) * 100,  # Calculate percentage if data capture is sufficient
+      NA_real_)  # Set to NA if data capture is below 75% or missing
+  ) %>%
+  ungroup()
+
+#JOIN PERCENT_DAYS_ABOVE_AQO_PM_TRS AND PERCENT_DAYS_ABOVE_AQO_NO2_SO2_O3
+PERCENT_DAYS_ABOVE_AQO_JOINED <- PERCENT_DAYS_ABOVE_AQO_PM_TRS %>%
+  full_join(PERCENT_DAYS_ABOVE_AQO_NO2_SO2_O3, by = c("year", "param", "percent_above_aqo"))
+
+# Ensure the param factor levels match the desired order
+PERCENT_DAYS_ABOVE_AQO_JOINED$param <- factor(PERCENT_DAYS_ABOVE_AQO_JOINED$param,
+                                              levels = c("pm25", "pm10", "trs", "no2", "so2", "o3"))
+
+#Plot percent of days in each year the conc for each pollutant was above AQO or PCO
+PERCENTABOVEAQOPLOT <- ggplot(PERCENT_DAYS_ABOVE_AQO_JOINED, aes(x = year, y = percent_above_aqo, colour = param)) +
+  geom_line() +
+  geom_point() +
+  scale_x_continuous(breaks = PERCENT_DAYS_ABOVE_AQO_JOINED$year) + # Specify breaks to show each year as a tick
+  labs(x = "Year", y = "Percent days contaminant above threshold", colour = "Parameter") +
+  scale_color_manual(values = c("pm25" = "blue", "pm10" = "salmon", "trs" = "seagreen", "no2" = "red", "so2" = "darkgoldenrod2", "o3" = "purple"),
+                     labels = c(expression(PM[2.5]), expression(PM[10]), "TRS", expression(NO[2]), expression(SO[2]), expression(O[3])))
+
+PERCENTABOVEAQOPLOT
+
+ggsave("percent_above_aqo_plot.png",
+       plot = PERCENTABOVEAQOPLOT,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
+
+#-------------------------------------------------------------------------
+# Days above 24hr CAAQS pm2.5
+#-------------------------------------------------------------------------
+
+#Count how many days were above CAAQS each year
+# Count days with values above 28 for 2015-2019 and above 27 for 2020-2024 excluding wildfire days
+count_above_threshold <- data_24hr %>%
+  filter(param == "pm25", flag_tfee == "FALSE") %>%
+  mutate(
+    # Create a new column for the threshold based on year
+    threshold = case_when(
+      year >= 2015 & year <= 2019 ~ 28,
+      year >= 2020 & year <= 2024 ~ 27,
+      TRUE ~ NA_real_
+    )
+  ) %>%
+  # Filter out rows where the threshold is NA (i.e., outside 2015-2024 range)
+  filter(!is.na(threshold)) %>%
+  # Count the number of days per year where the value exceeds the threshold
+  group_by(year) %>%
+  summarise(
+    count_above_threshold = sum(value > threshold, na.rm = TRUE)
+  )
+
+#Plot days above threshold for each year
+count_above_threshold %>%
+  ggplot(aes(x = year, y = count_above_threshold)) +
+  geom_bar(stat = "identity") +  # Use stat = "identity" to map y directly to values
+  geom_text(aes(label = count_above_threshold), vjust = -0.3) +  # Add labels on top of the bars
+  scale_x_continuous(breaks = count_above_threshold$year) +  # Specify breaks to show each year as a tick
+  labs(x = "Year", y = expression(paste("Number of days 24-hr average ", PM[2.5], " above CAAQS"))) +
+  theme_minimal()
+
+#----------------------------------------------------------------------
+#Percent above or below AQO/PCO
+#----------------------------------------------------------------------
 
 #For each year calculate the % above or below (percent_diff) the AQO or PCO the value is for each day (PM2.5 (25ug/m3) and PM10 (50ug/m3) and BC PCO for TRS (3ug/m3 or 2 ppb))
 PERCENT_DIFF_AQO <- data_24hr %>%
-#  filter(param %in% c("pm25", "pm10", "trs")) %>%
+  filter(param %in% c("pm25", "pm10", "trs")) %>%
   mutate(
     percent_diff = case_when(
       param == "pm25" ~ ((value - 25) / 25) * 100,  # AQO for pm25 is 25
@@ -329,35 +421,6 @@ ggsave("percent_diff_24hr_plot.png",
        units = "in",
        dpi = 300
 )
-
-#Calculate percentage of days in each year the 24hr values were over the AQO or PCO
-PERCENT_DAYS_ABOVE_AQO <- PERCENT_DIFF_AQO %>%
-  group_by(year, param) %>%
-  summarise(
-    total_days = n_distinct(date),  # Total number of days in the year
-    days_above_aqo = sum(above_aqo),  # Number of days above AQO
-    percent_above_aqo = (days_above_aqo / total_days) * 100  # Percentage of days above AQO
-  ) %>%
-  ungroup()
-
-#Plot percent of days in each year the conc for each pollutant was above AQO or PCO
-PERCENTABOVEAQOPLOT <- ggplot(PERCENT_ABOVE_AQO, aes(x = year, y = percent_above_aqo, colour = param)) +
-  geom_line() +
-  scale_x_continuous(breaks = PERCENT_ABOVE_AQO$year) + # Specify breaks to show each year as a tick
-  labs(x = "Year", y = "Percent days in each year pollutant above AQO or PCO", colour = "Parameter") +
-  scale_color_manual(values = c("pm25" = "blue", "pm10" = "salmon", "trs" = "seagreen"),
-                     labels = c("PM2.5", "PM10", "TRS"))
-PERCENTABOVEAQOPLOT
-ggsave("percent_above_aqo_plot.png",
-       plot = PERCENTABOVEAQOPLOT,
-       path = figure_path,
-       width = 10,
-       height = 6,
-       units = "in",
-       dpi = 300
-)
-
-
 
 
 
