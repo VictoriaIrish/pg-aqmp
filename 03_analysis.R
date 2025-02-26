@@ -194,7 +194,8 @@ dev.off()
 #------------------------------------------------------------------------
 
 #Plot advisory days
-ADVISORYDAYS %>%
+PROVINCE_PG_OMINECA_ADVISORY_PLOT <- ADVISORYDAYS %>%
+  filter(Region %in% c("OminecaPeace", "PrinceGeorge", "Province")) %>%
   ggplot(aes(x = Year, y = AdvisoryDays, fill = Region)) +
   geom_bar(stat = "identity", position = "identity") +
   scale_fill_manual(
@@ -205,11 +206,43 @@ ADVISORYDAYS %>%
        x = "Year",
        y = "Number of Advisory Days",
        fill = " ") +
-  scale_x_continuous(breaks = ADVISORYDAYS$Year) +
-  theme_minimal()
+  scale_x_continuous(breaks = ADVISORYDAYS$Year)
 
+PROVINCE_PG_OMINECA_ADVISORY_PLOT
+ggsave("PROVINCE_PG_OMINECA_ADVISORY_PLOT.png",
+       plot = PROVINCE_PG_OMINECA_ADVISORY_PLOT,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
 
+#Plot PM2.5 and PM10 advisories in PG
+PG_PM_ADVISORY_PLOT <- ADVISORYDAYS %>%
+  filter(Region %in% c("PrinceGeorgepm25", "PrinceGeorgepm10")) %>%
+  ggplot(aes(x = Year, y = AdvisoryDays, fill = Region)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_manual(
+    values = c("PrinceGeorgepm25" = "lightblue", "PrinceGeorgepm10" = "salmon"), # Custom colors
+    labels = c("PM10", "PM2.5")  # Custom legend labels
+  ) +
+  labs(title = "Number of Advisory Days",
+       x = "Year",
+       y = "Number of Advisory Days",
+       fill = " ") +
+  scale_x_continuous(breaks = ADVISORYDAYS$Year)
 
+PG_PM_ADVISORY_PLOT
+
+ggsave("PG_PM_ADVISORY_PLOT.png",
+       plot = PG_PM_ADVISORY_PLOT,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
 #------------------------------------------------------------------------
 #TRS visualisation
 #------------------------------------------------------------------------

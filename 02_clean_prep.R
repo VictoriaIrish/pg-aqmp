@@ -307,11 +307,13 @@ ADVISORYDAYS <- data.frame(
   Year = c(2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024),
   Province = c(52, 61, 60, 50, 26, 35, 58, 62, 38),
   OminecaPeace = c(27, 29, 29, 30, 7, 13, 34, 22, 27),
-  PrinceGeorge = c(4, 3, 6, 14, 3, 2, 1, 8, 16)
+  PrinceGeorge = c(4, 3, 6, 14, 3, 2, 1, 8, 16),
+  PrinceGeorgepm25 = c(0, 2, 6, 7, 2, 1, 0, 1, 6),
+  PrinceGeorgepm10 = c(4, 1, 0, 7, 1, 1, 1, 7, 10)
 )
 
 #Pivot long
-ADVISORYDAYS <- pivot_longer(ADVISORYDAYS, cols = c(Province, OminecaPeace, PrinceGeorge),
+ADVISORYDAYS <- pivot_longer(ADVISORYDAYS, cols = c(Province, OminecaPeace, PrinceGeorge, PrinceGeorgepm25, PrinceGeorgepm10),
                              names_to = "Region",
                              values_to = "AdvisoryDays")
 
