@@ -313,7 +313,7 @@ ADVISORYDAYS <- data.frame(
 )
 
 #Pivot long
-ADVISORYDAYS <- pivot_longer(ADVISORYDAYS, cols = c(Province, OminecaPeace, PrinceGeorge),
+ADVISORYDAYS <- pivot_longer(ADVISORYDAYS, cols = c(Province, OminecaPeace, PrinceGeorge, PrinceGeorgepm25, PrinceGeorgepm10),
                              names_to = "Region",
                              values_to = "AdvisoryDays")
 
