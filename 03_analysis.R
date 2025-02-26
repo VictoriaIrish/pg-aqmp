@@ -165,6 +165,29 @@ ggsave("data_1y_plot.png",
        dpi = 300
 )
 
+#-----------------------------------------------------------------------
+# PM2.5 openair plot
+#-----------------------------------------------------------------------
+PM25SEASONPLOT <- data_1hr %>%
+  select(-date) %>%
+  rename(date = date_hour_begin) %>%
+  filter(param == "pm25",
+         flag_tfee == "FALSE") %>% #get rid of wildfire influence
+  timeVariation(pollutant = "rounded_value",
+                group = "param",
+                ylab = expression(paste(PM[2.5]," (",mu,"g/",m^3,")")),
+                type = "season",
+                plot = FALSE)
+
+# Use a temporary device to save the plot
+png(filename = "Figures/PGPM25Seasonaldiurnalv2.png", width = 2500, height = 2000, res = 300)
+
+plot(PM25SEASONPLOT, subset = "hour", na.rm = TRUE,
+     main = expression(paste("Average ", PM[2.5], " concentrations between 2015 to 2024")),
+     legend = FALSE)
+
+dev.off()
+
 #------------------------------------------------------------------------
 #ADVISORY DAYS
 #------------------------------------------------------------------------
