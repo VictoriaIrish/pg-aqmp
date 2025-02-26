@@ -99,7 +99,8 @@ ggsave("data_cap_1y_plot.png",
 DATA24HRPLOT <- data_24hr %>%
   filter(param == "pm25") %>%
   ggplot(aes(x = date, y = value)) +
-  geom_point() +
+  geom_line() +
+  geom_hline(yintercept = 25, colour = "red", linetype = "dashed") +
   labs(x = "Year", y = expression(paste("24-hr average ", PM[2.5]," (",mu,"g/",m^3,")"))) +
   scale_x_date(breaks = "1 year", labels = scales::date_format("%Y"))
 DATA24HRPLOT
