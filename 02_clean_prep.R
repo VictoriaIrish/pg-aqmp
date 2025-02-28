@@ -327,3 +327,11 @@ library(readxl)
 percent_above_below_threshold <- read_xlsx("C:/R_working_directory/pg-aqmp/data/percent_above_or_below_threshold_pm25_no2_o3_so2.xlsx")
 
 save(percent_above_below_threshold, file = "data/percent_above_below_threshold.rds")
+
+#--------------------------------------------------------------------------
+#Load in daily_exceedances excel file
+#-------------------------------------------------------------------------
+
+daily_exceedance_pm10_trs <- read_xlsx("C:/R_working_directory/pg-aqmp/data/number_daily_exceedances_pm10_trs.xlsx")
+
+save(daily_exceedance_pm10_trs, file = "data/daily_exceedance_pm10_trs.rds")
