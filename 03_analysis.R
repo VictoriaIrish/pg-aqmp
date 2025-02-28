@@ -416,7 +416,7 @@ PERCENT_THRESHOLD <- percent_above_below_threshold %>%
   geom_line() +
   geom_hline(yintercept = 0, colour = "red", linetype = "dashed") +
   xlim(2015, 2023) +
-  labs(x = "Year", y = "Percent above or below threshold") +
+  labs(x = "Year", y = "Percent above or below threshold", colour = "Parameter") +
   scale_color_manual(values = c("pm25" = "blue", "no2" = "seagreen", "so2" = "darkgoldenrod2", "o3" = "purple"),
                      labels = c(expression(PM[2.5]), expression(NO[2]), expression(SO[2]), expression(O[3])))
 
@@ -431,91 +431,111 @@ ggsave("percent_threshold.png",
        dpi = 300
 )
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 #-------------------------------------------------------------------------
-# Days above 24hr CAAQS pm2.5
-#-------------------------------------------------------------------------
+# bar plot of number of daily exceedances each year for pm10 and trs
+#--------------------------------------------------------------------------
 
-#Count how many days were above CAAQS each year
-# Count days with values above 28 for 2015-2019 and above 27 for 2020-2024 excluding wildfire days
-count_above_threshold <- data_24hr %>%
-  filter(param == "pm25", flag_tfee == "FALSE") %>%
-  mutate(
-    # Create a new column for the threshold based on year
-    threshold = case_when(
-      year >= 2015 & year <= 2019 ~ 28,
-      year >= 2020 & year <= 2024 ~ 27,
-      TRUE ~ NA_real_
-    )
-  ) %>%
-  # Filter out rows where the threshold is NA (i.e., outside 2015-2024 range)
-  filter(!is.na(threshold)) %>%
-  # Count the number of days per year where the value exceeds the threshold
-  group_by(year) %>%
-  summarise(
-    count_above_threshold = sum(value > threshold, na.rm = TRUE)
-  )
+DAILY_EXCEEDANCE_PM10_TRS <- daily_exceedance_pm10_trs %>%
+  ggplot(aes(x = Year, y = `24hrexceedances`, fill = param)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = `24hrexceedances`),
+            position = position_dodge(width = 0.9),
+            vjust = -0.5) +  # Adjust the vertical position of the text
+  labs(x = "Year", y = "Number of daily exceedances per year", fill = "Parameter") +
+  scale_fill_manual(values = c("pm10" = "blue", "trs" = "seagreen"),
+                    labels = c(expression(PM[10]), "TRS"))  # Adjust this as needed
 
-#Plot days above threshold for each year
-count_above_threshold %>%
-  ggplot(aes(x = year, y = count_above_threshold)) +
-  geom_bar(stat = "identity") +  # Use stat = "identity" to map y directly to values
-  geom_text(aes(label = count_above_threshold), vjust = -0.3) +  # Add labels on top of the bars
-  scale_x_continuous(breaks = count_above_threshold$year) +  # Specify breaks to show each year as a tick
-  labs(x = "Year", y = expression(paste("Number of days 24-hr average ", PM[2.5], " above CAAQS"))) +
-  theme_minimal()
+DAILY_EXCEEDANCE_PM10_TRS
 
-#----------------------------------------------------------------------
-#Percent above or below AQO/PCO
-#----------------------------------------------------------------------
-
-#For each year calculate the % above or below (percent_diff) the AQO or PCO the value is for each day (PM2.5 (25ug/m3) and PM10 (50ug/m3) and BC PCO for TRS (3ug/m3 or 2 ppb))
-PERCENT_DIFF_AQO <- data_24hr %>%
-  filter(param %in% c("pm25", "pm10", "trs")) %>%
-  mutate(
-    percent_diff = case_when(
-      param == "pm25" ~ ((value - 25) / 25) * 100,  # AQO for pm25 is 25
-      param == "pm10" ~ ((value - 50) / 50) * 100,  # AQO for pm10 is 50
-      param == "trs" ~ ((value - 2) / 2) * 100,     # AQO for trs is 2
-      TRUE ~ NA_real_  # Handle any other unexpected cases
-    ),
-    # Create a new column for whether the value is above the AQO
-    above_aqo = case_when(
-      param == "pm25" & value > 25 ~ 1,  # AQO for PM2.5 is 25 ug/m³
-      param == "pm10" & value > 50 ~ 1,  # AQO for PM10 is 50 ug/m³
-      param == "trs" & value > 2 ~ 1,    # PCO TRS is 2 ppb
-      TRUE ~ 0  # 0 if it's not above the AQO
-    )
-  )
-
-#Plot the 24hr percent difference from AQO and PCO
-PERCENTDIFF24HRPLOT <- ggplot(PERCENT_DIFF_AQO, aes(x = date, y = percent_diff, colour = param)) +
-  geom_line() +
-  geom_hline(yintercept = 0, col = "red", linetype = "dashed") +
-  labs(x = "Date", y = "Percent above or below AQO or PCO", colour = "Parameter") +
-  scale_color_manual(values = c("pm25" = "blue", "pm10" = "salmon", "trs" = "seagreen"),
-                     labels = c("PM2.5", "PM10", "TRS"))
-
-ggsave("percent_diff_24hr_plot.png",
-       plot = PERCENTDIFF24HRPLOT,
+ggsave("daily_exceedance_pm10_trs.png",
+       plot = DAILY_EXCEEDANCE_PM10_TRS,
        path = figure_path,
        width = 10,
        height = 6,
        units = "in",
        dpi = 300
 )
+
+
+
+
+
+
+
+
+
+# #-------------------------------------------------------------------------
+# # Days above 24hr CAAQS pm2.5
+# #-------------------------------------------------------------------------
+#
+# #Count how many days were above CAAQS each year
+# # Count days with values above 28 for 2015-2019 and above 27 for 2020-2024 excluding wildfire days
+# count_above_threshold <- data_24hr %>%
+#   filter(param == "pm25", flag_tfee == "FALSE") %>%
+#   mutate(
+#     # Create a new column for the threshold based on year
+#     threshold = case_when(
+#       year >= 2015 & year <= 2019 ~ 28,
+#       year >= 2020 & year <= 2024 ~ 27,
+#       TRUE ~ NA_real_
+#     )
+#   ) %>%
+#   # Filter out rows where the threshold is NA (i.e., outside 2015-2024 range)
+#   filter(!is.na(threshold)) %>%
+#   # Count the number of days per year where the value exceeds the threshold
+#   group_by(year) %>%
+#   summarise(
+#     count_above_threshold = sum(value > threshold, na.rm = TRUE)
+#   )
+#
+# #Plot days above threshold for each year
+# count_above_threshold %>%
+#   ggplot(aes(x = year, y = count_above_threshold)) +
+#   geom_bar(stat = "identity") +  # Use stat = "identity" to map y directly to values
+#   geom_text(aes(label = count_above_threshold), vjust = -0.3) +  # Add labels on top of the bars
+#   scale_x_continuous(breaks = count_above_threshold$year) +  # Specify breaks to show each year as a tick
+#   labs(x = "Year", y = expression(paste("Number of days 24-hr average ", PM[2.5], " above CAAQS"))) +
+#   theme_minimal()
+
+# #----------------------------------------------------------------------
+# #Percent above or below AQO/PCO
+# #----------------------------------------------------------------------
+#
+# #For each year calculate the % above or below (percent_diff) the AQO or PCO the value is for each day (PM2.5 (25ug/m3) and PM10 (50ug/m3) and BC PCO for TRS (3ug/m3 or 2 ppb))
+# PERCENT_DIFF_AQO <- data_24hr %>%
+#   filter(param %in% c("pm25", "pm10", "trs")) %>%
+#   mutate(
+#     percent_diff = case_when(
+#       param == "pm25" ~ ((value - 25) / 25) * 100,  # AQO for pm25 is 25
+#       param == "pm10" ~ ((value - 50) / 50) * 100,  # AQO for pm10 is 50
+#       param == "trs" ~ ((value - 2) / 2) * 100,     # AQO for trs is 2
+#       TRUE ~ NA_real_  # Handle any other unexpected cases
+#     ),
+#     # Create a new column for whether the value is above the AQO
+#     above_aqo = case_when(
+#       param == "pm25" & value > 25 ~ 1,  # AQO for PM2.5 is 25 ug/m³
+#       param == "pm10" & value > 50 ~ 1,  # AQO for PM10 is 50 ug/m³
+#       param == "trs" & value > 2 ~ 1,    # PCO TRS is 2 ppb
+#       TRUE ~ 0  # 0 if it's not above the AQO
+#     )
+#   )
+#
+# #Plot the 24hr percent difference from AQO and PCO
+# PERCENTDIFF24HRPLOT <- ggplot(PERCENT_DIFF_AQO, aes(x = date, y = percent_diff, colour = param)) +
+#   geom_line() +
+#   geom_hline(yintercept = 0, col = "red", linetype = "dashed") +
+#   labs(x = "Date", y = "Percent above or below AQO or PCO", colour = "Parameter") +
+#   scale_color_manual(values = c("pm25" = "blue", "pm10" = "salmon", "trs" = "seagreen"),
+#                      labels = c("PM2.5", "PM10", "TRS"))
+#
+# ggsave("percent_diff_24hr_plot.png",
+#        plot = PERCENTDIFF24HRPLOT,
+#        path = figure_path,
+#        width = 10,
+#        height = 6,
+#        units = "in",
+#        dpi = 300
+# )
 
 
 
