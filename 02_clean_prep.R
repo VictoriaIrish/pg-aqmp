@@ -318,3 +318,12 @@ ADVISORYDAYS <- pivot_longer(ADVISORYDAYS, cols = c(Province, OminecaPeace, Prin
                              values_to = "AdvisoryDays")
 
 save(ADVISORYDAYS, file = "data/Advisorydays.rds")
+
+#-------------------------------------------------------------------------
+#Load in percent_above_below_threshold excel file
+#-------------------------------------------------------------------------
+library(readxl)
+
+percent_above_below_threshold <- read_xlsx("C:/R_working_directory/pg-aqmp/data/percent_above_or_below_threshold_pm25_no2_o3_so2.xlsx")
+
+save(percent_above_below_threshold, file = "data/percent_above_below_threshold.rds")
