@@ -406,6 +406,44 @@ ggsave("percent_above_aqo_plot.png",
        dpi = 300
 )
 
+#------------------------------------------------------------------------
+#Percent above or below threshold
+#------------------------------------------------------------------------
+
+PERCENT_THRESHOLD <- percent_above_below_threshold %>%
+  mutate(Param = factor(Param, levels = c("pm25", "no2", "so2", "o3"))) %>%
+  ggplot(aes(x = Year, y = percent_above_below_threshold, colour = Param)) +
+  geom_line() +
+  geom_hline(yintercept = 0, colour = "red", linetype = "dashed") +
+  xlim(2015, 2023) +
+  labs(x = "Year", y = "Percent above or below threshold") +
+  scale_color_manual(values = c("pm25" = "blue", "no2" = "seagreen", "so2" = "darkgoldenrod2", "o3" = "purple"),
+                     labels = c(expression(PM[2.5]), expression(NO[2]), expression(SO[2]), expression(O[3])))
+
+PERCENT_THRESHOLD
+
+ggsave("percent_threshold.png",
+       plot = PERCENT_THRESHOLD,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #-------------------------------------------------------------------------
 # Days above 24hr CAAQS pm2.5
 #-------------------------------------------------------------------------
