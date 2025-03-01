@@ -234,11 +234,11 @@ data_24hr <- data_24hr |>
 # save data sets: data_1hr, data_24hr, data_1m, data_1y, and data_season
 #------------------------------------------------------
 
-save(data_1hr, file = "data/data_1hr.rds")
-save(data_24hr, file = "data/data_24hr.rds")
-save(data_1m, file = "data/data_1m.rds")
-save(data_1y, file = "data/data_1y.rds")
-save(data_season, file = "data/data_season.rds")
+saveRDS(data_1hr, file = "data/data_1hr.rds")
+saveRDS(data_24hr, file = "data/data_24hr.rds")
+saveRDS(data_1m, file = "data/data_1m.rds")
+saveRDS(data_1y, file = "data/data_1y.rds")
+saveRDS(data_season, file = "data/data_season.rds")
 
 #------------------------------------------------------
 # data capture summaries: month, year and season
@@ -289,9 +289,6 @@ save(data_cap_season, file = "data/data_cap_season.rds")
 rm(list = ls(pattern = "wide"))
 rm(list = ls(pattern = "meta"))
 rm(tfee)
-
-
-
 
 #------------------------------------------------------
 # Number of Advisories
