@@ -110,7 +110,7 @@ data_1hr <- data_1hr |>
          instrument,
          validation_status)
 
-# if data_1hr contains expected number of rows, save dataframe to an RDS file and clean up unnecessary objects and dataframes
+# if data_1hr contains expected number of rows, save dataframe to an RDS file and clean up
 if(nrow(data_1hr) == expected_nrows){
   saveRDS(data_1hr, file = "data/data_1hr.rds")
   rm(ts_start)
@@ -147,7 +147,7 @@ data_24hr_wide <- timeAverage(data_1hr_wide,
                          fill = TRUE,
                          type = "station_name")
 
-### monthly, annual and seasonal averages
+### monthly, annual, calendar quarter and seasonal averages
 data_1m_wide <- timeAverage(data_24hr_wide,
                           avg.time = "month",
                           data.thresh = 75,
@@ -161,6 +161,12 @@ data_1y_wide <- timeAverage(data_24hr_wide,
                           statistic = "mean",
                           fill = TRUE,
                           type = "station_name")
+
+data_qtr_wide <- timeAverage(data_24hr_wide,
+                             avg.time = "quarter",
+                             statistic = "mean",
+                             fill = TRUE,
+                             type = "station_name")
 
 data_season_wide <- timeAverage(data_24hr_wide,
                            avg.time = "season",
@@ -186,6 +192,12 @@ data_1m <- data_1m_wide |>
   left_join(data_24hr_meta, by = c("station_name", "date", "param"))
 
 data_1y <- data_1y_wide |>
+  pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "value") |>
+  arrange(param, date)|>
+  mutate(param = factor(param)) |>
+  left_join(data_24hr_meta, by = c("station_name", "date", "param"))
+
+data_qtr <- data_qtr_wide |>
   pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "value") |>
   arrange(param, date)|>
   mutate(param = factor(param)) |>
@@ -239,19 +251,19 @@ data_24hr <- data_24hr |>
 # save data sets: data_1hr, data_24hr, data_1m, data_1y, and data_season
 #------------------------------------------------------
 
-save(data_1hr, file = "data/data_1hr.rds")
-save(data_24hr, file = "data/data_24hr.rds")
-save(data_1m, file = "data/data_1m.rds")
-save(data_1y, file = "data/data_1y.rds")
-save(data_season, file = "data/data_season.rds")
+saveRDS(data_1hr, file = "data/data_1hr.rds")
+saveRDS(data_24hr, file = "data/data_24hr.rds")
+saveRDS(data_1m, file = "data/data_1m.rds")
+saveRDS(data_1y, file = "data/data_1y.rds")
+saveRDS(data_qtr, file = "data/data_qtr.rds")
+saveRDS(data_season, file = "data/data_season.rds")
 
 #------------------------------------------------------
-# data capture summaries: month, year and season
+# data capture summaries: month, year, calendar quarter, and season
 #------------------------------------------------------
 
 data_cap_1m <- timeAverage(data_24hr_wide,
                            avg.time = "month",
-                           data.thresh = 75,
                            statistic = "data.cap",
                            fill = TRUE,
                            type = "station_name") |>
@@ -262,7 +274,6 @@ data_cap_1m <- timeAverage(data_24hr_wide,
 
 data_cap_1y <- timeAverage(data_24hr_wide,
                             avg.time = "year",
-                            data.thresh = 75,
                             statistic = "data.cap",
                             fill = TRUE,
                             type = "station_name") |>
@@ -271,6 +282,15 @@ data_cap_1y <- timeAverage(data_24hr_wide,
   pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "data_cap_percent") |>
   mutate(param = factor(param))
 
+data_cap_qtr <- timeAverage(data_24hr_wide,
+                            avg.time = "quarter",
+                            statistic = "data.cap",
+                            fill = TRUE,
+                            type = "station_name")|>
+  mutate_if(is.numeric, round, digits = 1) |>
+  select(-Uu,-Vv)|>
+  pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "data_cap_percent") |>
+  mutate(param = factor(param))
 
 data_cap_season <- timeAverage(data_24hr_wide,
                                 avg.time = "season",
@@ -282,9 +302,10 @@ data_cap_season <- timeAverage(data_24hr_wide,
   pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "data_cap_percent") |>
   mutate(param = factor(param))
 
-save(data_cap_1m, file = "data/data_cap_1m.rds")
-save(data_cap_1y, file = "data/data_cap_1y.rds")
-save(data_cap_season, file = "data/data_cap_season.rds")
+saveRDS(data_cap_1m, file = "data/data_cap_1m.rds")
+saveRDS(data_cap_1y, file = "data/data_cap_1y.rds")
+saveRDS(data_cap_qtr, file = "data/data_qtr_season.rds")
+saveRDS(data_cap_season, file = "data/data_cap_season.rds")
 
 
 #------------------------------------------------------
@@ -294,9 +315,6 @@ save(data_cap_season, file = "data/data_cap_season.rds")
 rm(list = ls(pattern = "wide"))
 rm(list = ls(pattern = "meta"))
 rm(tfee)
-
-
-
 
 #------------------------------------------------------
 # Number of Advisories
