@@ -411,8 +411,8 @@ ggsave("percent_above_aqo_plot.png",
 #------------------------------------------------------------------------
 
 PERCENT_THRESHOLD <- percent_above_below_threshold %>%
-  mutate(Param = factor(Param, levels = c("pm25", "no2", "so2", "o3"))) %>%
-  ggplot(aes(x = Year, y = percent_above_below_threshold, colour = Param)) +
+  mutate(param = factor(param, levels = c("pm25", "no2", "so2", "o3"))) %>%
+  ggplot(aes(x = year, y = percent_above_below_threshold, colour = param)) +
   geom_line() +
   geom_hline(yintercept = 0, colour = "red", linetype = "dashed") +
   xlim(2015, 2023) +
@@ -436,9 +436,10 @@ ggsave("percent_threshold.png",
 #--------------------------------------------------------------------------
 
 DAILY_EXCEEDANCE_PM10_TRS <- daily_exceedance_pm10_trs %>%
-  ggplot(aes(x = Year, y = `24hrexceedances`, fill = param)) +
+  filter(type_exceed == "day") %>%
+  ggplot(aes(x = year, y = value, fill = param)) +
   geom_bar(stat = "identity", position = "dodge") +
-  geom_text(aes(label = `24hrexceedances`),
+  geom_text(aes(label = value),
             position = position_dodge(width = 0.9),
             vjust = -0.5) +  # Adjust the vertical position of the text
   labs(x = "Year", y = "Number of daily exceedances per year", fill = "Parameter") +
@@ -456,9 +457,31 @@ ggsave("daily_exceedance_pm10_trs.png",
        dpi = 300
 )
 
+#-----------------------------------------------------------------------------
+# bar plot of TRS #days above 24hr PCO and # hours above 1hr PCO
+#-----------------------------------------------------------------------------
 
+DAILY_HRLY_EXCEEDANCE_TRS <- daily_exceedance_pm10_trs %>%
+  filter(param == "trs") %>%
+  ggplot(aes(x = year, y = value, fill = type_exceed)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = value),
+            position = position_dodge(width = 0.9),
+            vjust = -0.5) +  # Adjust the vertical position of the text
+  labs(x = "Year", y = "Number of exceedances per year", fill = "Metric") +
+  scale_fill_manual(values = c("day" = "blue", "hr" = "seagreen"),
+                    labels = c("24-hr", "1-hr"))  # Adjust this as needed
 
+DAILY_HRLY_EXCEEDANCE_TRS
 
+ggsave("daily_hrly_exceedance_trs.png",
+       plot = DAILY_HRLY_EXCEEDANCE_TRS,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
 
 
 
