@@ -252,7 +252,7 @@ DATA24HRTRSPLOT <- data_24hr %>%
   ggplot(aes(x = date, y = value)) +
   geom_point() +
   geom_hline(yintercept = 3, colour = "red", linetype = "dotted") +
-  labs(x = "Year", y = expression(paste("24-hr average TRS", " (",mu,"g/",m^3,")"))) +
+  labs(x = "Year", y = expression(paste("24-hr average TRS (ppb)"))) +
   scale_x_date(breaks = "1 year", labels = scales::date_format("%Y"))
 DATA24HRTRSPLOT
 ggsave("data_24hr_trs_plot.png",
@@ -269,7 +269,7 @@ DATA1MTRSPLOT <- data_1m %>%
   filter(param == "trs") %>%
   ggplot(aes(x = date, y = value)) +
   geom_point() +
-  labs(x = "Month", y = expression(paste("Monthly average TRS"," (",mu,"g/",m^3,")")))
+  labs(x = "Month", y = expression(paste("Monthly average TRS (ppb)")))
 DATA1MTRSPLOT
 ggsave("data_1m_trs_plot.png",
        plot = DATA1MTRSPLOT,
@@ -285,7 +285,7 @@ DATASEASONTRSPLOT <- data_season %>%
   filter(param == "trs") %>%
   ggplot(aes(x = date, y = value)) +
   geom_point() +
-  labs(x = "Year", y = expression(paste("Seasonal average TRS"," (",mu,"g/",m^3,")")))
+  labs(x = "Year", y = expression(paste("Seasonal average TRS (ppb)")))
 DATASEASONPLOT
 ggsave("data_season_trs_plot.png",
        plot = DATASEASONTRSPLOT,
@@ -301,7 +301,7 @@ DATA1YTRSPLOT <- data_1y %>%
   filter(param == "trs") %>%
   ggplot(aes(x = year, y = value)) +
   geom_point() +
-  labs(x = "Year", y = expression(paste("Annual average TRS"," (",mu,"g/",m^3,")"))) +
+  labs(x = "Year", y = expression(paste("Annual average TRS (ppb)"))) +
   scale_x_continuous(
     breaks = seq(2015, 2024, by = 1),  # This ensures ticks for every year
     labels = as.character(seq(2015, 2024, by = 1))  # Format tick labels as years
