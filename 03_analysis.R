@@ -483,9 +483,28 @@ ggsave("daily_hrly_exceedance_trs.png",
        dpi = 300
 )
 
+#-------------------------------------------------------------------------------
+# plot of pm10  exceedances
+#-------------------------------------------------------------------------------
 
+DAILY_EXCEEDANCE_PM10 <- daily_exceedance_pm10_trs %>%
+  filter(param == "pm10", type_exceed == "day") %>%
+  ggplot(aes(x = year, y = value)) +
+  geom_bar(stat = "identity") +
+  geom_text(aes(label = value),
+            vjust = -0.5) +
+  labs(x = "Year", y = expression(paste("Number of daily ", PM[10], " exceedances per year")), fill = "Metric")
 
+DAILY_EXCEEDANCE_PM10
 
+ggsave("daily_exceedance_pm10.png",
+       plot = DAILY_EXCEEDANCE_PM10,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
 
 # #-------------------------------------------------------------------------
 # # Days above 24hr CAAQS pm2.5
