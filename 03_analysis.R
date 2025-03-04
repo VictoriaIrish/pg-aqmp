@@ -243,6 +243,32 @@ ggsave("PG_PM_ADVISORY_PLOT.png",
        units = "in",
        dpi = 300
 )
+
+#Plot advisory days Province and PG only
+PROVINCE_PG_ADVISORY_PLOT <- ADVISORYDAYS %>%
+  filter(Region %in% c("PrinceGeorge", "Province")) %>%
+  ggplot(aes(x = Year, y = AdvisoryDays, fill = Region)) +
+  geom_bar(stat = "identity", position = "identity") +
+  scale_fill_manual(
+    values = c("PrinceGeorge" = "salmon", "Province" = "seagreen3"), # Custom colors
+    labels = c("Prince George", "Province")  # Custom legend labels
+  ) +
+  labs(title = expression(paste("Total number of Advisory Days (for ", PM[10], " and ", PM[2.5], ")")),
+       x = "Year",
+       y = "Number of Advisory Days",
+       fill = " ") +
+  scale_x_continuous(breaks = ADVISORYDAYS$Year)
+
+PROVINCE_PG_ADVISORY_PLOT
+
+ggsave("PROVINCE_PG_ADVISORY_PLOT.png",
+       plot = PROVINCE_PG_ADVISORY_PLOT,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
 #------------------------------------------------------------------------
 #TRS visualisation
 #------------------------------------------------------------------------
