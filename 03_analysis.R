@@ -225,7 +225,7 @@ PG_PM_ADVISORY_PLOT <- ADVISORYDAYS %>%
   geom_bar(stat = "identity", position = "stack") +
   scale_fill_manual(
     values = c("PrinceGeorgepm25" = "lightblue", "PrinceGeorgepm10" = "salmon"), # Custom colors
-    labels = c("PM10", "PM2.5")  # Custom legend labels
+    labels = c(expression(PM[10]), expression(PM[2.5]))  # Custom legend labels
   ) +
   labs(title = "Number of Advisory Days",
        x = "Year",
@@ -437,14 +437,48 @@ ggsave("percent_above_aqo_plot.png",
 #------------------------------------------------------------------------
 
 PERCENT_THRESHOLD <- percent_above_below_threshold %>%
-  mutate(param = factor(param, levels = c("pm25", "no2", "so2", "o3"))) %>%
-  ggplot(aes(x = year, y = percent_above_below_threshold, colour = param)) +
+  filter(year >= 2015) %>%
+  mutate(
+    param_obj_type = factor(paste(param, objective_type, sep = "_"), levels = c("pm25_annual_aqo", "pm25_annual_caaqs", "pm25_24hr_prov_aqo", "pm25_24hr_caaqs", "no2_annual_caaqs", "no2_1hr_caaqs", "so2_annual_caaqs", "so2_1hr_caaqs", "o3_8hr_caaqs"))
+    ) %>%
+  ggplot(aes(x = year, y = percent_above_below_threshold, colour = param_obj_type)) +
   geom_line() +
+  geom_point() +
   geom_hline(yintercept = 0, colour = "red", linetype = "dashed") +
-  xlim(2015, 2023) +
-  labs(x = "Year", y = "Percent above or below threshold", colour = "Parameter") +
-  scale_color_manual(values = c("pm25" = "blue", "no2" = "seagreen", "so2" = "darkgoldenrod2", "o3" = "purple"),
-                     labels = c(expression(PM[2.5]), expression(NO[2]), expression(SO[2]), expression(O[3])))
+  xlim(2015, 2024) +
+  scale_x_continuous(
+    breaks = 2015:2024,  # Show ticks for each year
+    labels = as.character(2015:2024)  # Optionally convert the ticks to characters for display
+  ) +
+  labs(
+    x = "Year",
+    y = "Percent above or below threshold",
+    colour = "Pollutant"
+  ) +
+  scale_color_manual(
+    values = c(
+      "pm25_annual_aqo" = "deepskyblue4",
+      "pm25_annual_caaqs" = "lightblue",
+      "pm25_24hr_prov_aqo" = "deepskyblue3",
+      "pm25_24hr_caaqs" = "lightblue3",
+      "no2_annual_caaqs" = "darkgreen",
+      "no2_1hr_caaqs" = "seagreen",
+      "so2_annual_caaqs" = "yellow3",
+      "so2_1hr_caaqs" = "goldenrod",
+      "o3_8hr_caaqs" = "purple"),
+    labels = c(
+      expression(PM[2.5] ~ " - Annual AQO"),
+      expression(PM[2.5] ~ " - Annual CAAQS"),
+      expression(PM[2.5] ~ " - 24-hr AQO"),
+      expression(PM[2.5] ~ " - 24-hr CAAQS"),
+      expression(NO[2] ~ " - Annual CAAQS"),
+      expression(NO[2] ~ " - 1-hr CAAQS"),
+      expression(SO[2] ~ " - Annual CAAQS"),
+      expression(SO[2] ~ " - 1-hr CAAQS"),
+      expression(O[3] ~ " - 8-hr CAAQS")
+    )
+  )
+
 
 PERCENT_THRESHOLD
 
