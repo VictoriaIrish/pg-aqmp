@@ -436,7 +436,9 @@ ggsave("percent_above_aqo_plot.png",
 #Percent above or below threshold
 #------------------------------------------------------------------------
 
-PERCENT_THRESHOLD <- percent_above_below_threshold %>%
+# PERCENT_THRESHOLD <-
+
+  percent_above_below_threshold %>%
   filter(year >= 2015) %>%
   mutate(
     param_obj_type = factor(paste(param, objective_type, sep = "_"), levels = c("pm25_annual_aqo", "pm25_annual_caaqs", "pm25_24hr_prov_aqo", "pm25_24hr_caaqs", "no2_annual_caaqs", "no2_1hr_caaqs", "so2_annual_caaqs", "so2_1hr_caaqs", "o3_8hr_caaqs"))
