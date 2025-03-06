@@ -436,10 +436,8 @@ ggsave("percent_above_aqo_plot.png",
 #Percent above or below threshold
 #------------------------------------------------------------------------
 
-# PERCENT_THRESHOLD <-
-
-  percent_above_below_threshold %>%
-  filter(year >= 2015) %>%
+PERCENT_THRESHOLD <-percent_above_below_threshold %>%
+  filter(year >= 2015, !(param == "pm25" & objective_type %in% c("annual_caaqs", "24hr_caaqs"))) %>%
   mutate(
     param_obj_type = factor(paste(param, objective_type, sep = "_"), levels = c("pm25_annual_aqo", "pm25_annual_caaqs", "pm25_24hr_prov_aqo", "pm25_24hr_caaqs", "no2_annual_caaqs", "no2_1hr_caaqs", "so2_annual_caaqs", "so2_1hr_caaqs", "o3_8hr_caaqs"))
     ) %>%
@@ -460,24 +458,20 @@ ggsave("percent_above_aqo_plot.png",
   scale_color_manual(
     values = c(
       "pm25_annual_aqo" = "deepskyblue4",
-      "pm25_annual_caaqs" = "lightblue",
       "pm25_24hr_prov_aqo" = "deepskyblue3",
-      "pm25_24hr_caaqs" = "lightblue3",
       "no2_annual_caaqs" = "darkgreen",
       "no2_1hr_caaqs" = "seagreen",
       "so2_annual_caaqs" = "yellow3",
       "so2_1hr_caaqs" = "goldenrod",
       "o3_8hr_caaqs" = "purple"),
     labels = c(
-      expression(PM[2.5] ~ " - Annual AQO"),
-      expression(PM[2.5] ~ " - Annual CAAQS"),
-      expression(PM[2.5] ~ " - 24-hr AQO"),
-      expression(PM[2.5] ~ " - 24-hr CAAQS"),
-      expression(NO[2] ~ " - Annual CAAQS"),
-      expression(NO[2] ~ " - 1-hr CAAQS"),
-      expression(SO[2] ~ " - Annual CAAQS"),
-      expression(SO[2] ~ " - 1-hr CAAQS"),
-      expression(O[3] ~ " - 8-hr CAAQS")
+      expression(PM[2.5] ~ " - Annual"),
+      expression(PM[2.5] ~ " - 24-hr"),
+      expression(NO[2] ~ " - Annual"),
+      expression(NO[2] ~ " - 1-hr"),
+      expression(SO[2] ~ " - Annual"),
+      expression(SO[2] ~ " - 1-hr"),
+      expression(O[3] ~ " - 8-hr")
     )
   )
 
