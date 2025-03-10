@@ -169,6 +169,43 @@ ggsave("data_1y_plot.png",
 #-----------------------------------------------------------------------
 # PM2.5 openair plot
 #-----------------------------------------------------------------------
+
+# First, calculate the daily average temperature
+daily_avg_temp <- data_1hr %>%
+  filter(param == "temp") %>%  # Filter temperature data
+  mutate(date_only = as.Date(date_hour_begin)) %>%  # Extract date from the datetime
+  group_by(date_only) %>%  # Group by the date only (no time)
+  summarise(daily_avg_temp = mean(rounded_value, na.rm = TRUE))  # Calculate daily average temperature
+
+# Now, join this daily average temperature data with the PM2.5 data
+PM25SEASONPLOTTEMPDIVIDED <- data_1hr %>%
+  select(-date) %>%
+  filter(param == "pm25", flag_tfee == "FALSE") %>%
+  mutate(date_only = as.Date(date_hour_begin)) %>%  # Create date_only column to match daily_avg_temp
+  # Join with the daily average temperature data based on the date_only
+  left_join(daily_avg_temp, by = "date_only") %>%
+  mutate(temp_condition = ifelse(daily_avg_temp >= 2, "Temp >= 2", "Temp < 2")) %>%  # Create temp condition
+  rename(date = date_hour_begin) %>%
+  select(-date_only) %>%  # Drop the temporary 'date_only' column
+  timeVariation(pollutant = "rounded_value",
+                group = c("temp_condition"),  # Group by both 'param' and 'temp_condition'
+                ylab = expression(paste(PM[2.5], " (", mu, "g/", m^3, ")")),
+                type = "season",
+                plot = FALSE)
+
+# To view the plot
+PM25SEASONPLOTTEMPDIVIDED
+
+# Use a temporary device to save the plot
+png(filename = "Figures/PGPM25Seasonaldiurnaltempdivided.png", width = 2500, height = 2000, res = 300)
+
+plot(PM25SEASONPLOTTEMPDIVIDED, subset = "hour", na.rm = TRUE,
+     main = expression(paste("Average ", PM[2.5], " concentrations between 2015 to 2024")),
+     legend = FALSE)
+
+dev.off()
+
+
 PM25SEASONPLOT <- data_1hr %>%
   select(-date) %>%
   rename(date = date_hour_begin) %>%
