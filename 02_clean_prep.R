@@ -189,25 +189,31 @@ data_1m <- data_1m_wide |>
   mutate(date = as.Date(date, tz = "Etc/GMT+8"),
          value = round(value, 1),
          param = factor(param)) |>
-  left_join(data_24hr_meta, by = c("station_name", "date", "param"))
+  left_join(data_24hr_meta, by = c("station_name", "date", "param")) |>
+  select(-date)
 
 data_1y <- data_1y_wide |>
   pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "value") |>
   arrange(param, date)|>
   mutate(param = factor(param)) |>
-  left_join(data_24hr_meta, by = c("station_name", "date", "param"))
+  left_join(data_24hr_meta, by = c("station_name", "date", "param")) |>
+  mutate(year = year(date)) |>
+  select(-date, -month)
 
 data_qtr <- data_qtr_wide |>
   pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "value") |>
   arrange(param, date)|>
   mutate(param = factor(param)) |>
-  left_join(data_24hr_meta, by = c("station_name", "date", "param"))
+  left_join(data_24hr_meta, by = c("station_name", "date", "param")) |>
+  mutate(quarter = quarter(date)) |>
+  select(-date, -month)
 
 data_season <- data_season_wide |>
   pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "value") |>
   arrange(param, date)|>
   mutate(param = factor(param)) |>
-  left_join(data_24hr_meta, by = c("station_name", "date", "param"))
+  left_join(data_24hr_meta, by = c("station_name", "date", "param")) |>
+  select(-date)
 
 #------------------------------------------------------
 # add tf_ee to data_1hr and data_24hr: based on data/tfee-log.csv
@@ -244,19 +250,9 @@ data_24hr <- data_24hr |>
          flag_tfee = case_when(event_type == "TF" ~ TRUE,
                                event_type == "EE" ~ TRUE,
                                .default = FALSE),
-         value_tfee = ifelse(flag_tfee == TRUE & param == "pm25" & value >= 25, NA_real_, value)) |>
+         value_tfee = ifelse(flag_tfee == TRUE & param == "pm25" & round(value, 0) >= 25, NA_real_, value)) |>
   select(station_name, year, month, date, param, value, value_tfee, instrument, unit, validation_status, flag_tfee, event_type, comment)
 
-#------------------------------------------------------
-# save data sets: data_1hr, data_24hr, data_1m, data_1y, and data_season
-#------------------------------------------------------
-
-saveRDS(data_1hr, file = "data/data_1hr.rds")
-saveRDS(data_24hr, file = "data/data_24hr.rds")
-saveRDS(data_1m, file = "data/data_1m.rds")
-saveRDS(data_1y, file = "data/data_1y.rds")
-saveRDS(data_qtr, file = "data/data_qtr.rds")
-saveRDS(data_season, file = "data/data_season.rds")
 
 #------------------------------------------------------
 # data capture summaries: month, year, calendar quarter, and season
@@ -270,7 +266,10 @@ data_cap_1m <- timeAverage(data_24hr_wide,
   mutate_if(is.numeric, round, digits = 1) |>
   select(-Uu,-Vv) |>
   pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "data_cap_percent") |>
-  mutate(param = factor(param))
+  mutate(param = factor(param),
+         year = year(date),
+         month = factor(month(date, label = TRUE, abbr = TRUE), levels = month.abb[])) |>
+  select(-date)
 
 data_cap_1y <- timeAverage(data_24hr_wide,
                             avg.time = "year",
@@ -280,7 +279,9 @@ data_cap_1y <- timeAverage(data_24hr_wide,
   mutate_if(is.numeric, round, digits = 1)|>
   select(-Uu,-Vv) |>
   pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "data_cap_percent") |>
-  mutate(param = factor(param))
+  mutate(param = factor(param),
+         year = year(date)) |>
+  select(-date)
 
 data_cap_qtr <- timeAverage(data_24hr_wide,
                             avg.time = "quarter",
@@ -290,7 +291,12 @@ data_cap_qtr <- timeAverage(data_24hr_wide,
   mutate_if(is.numeric, round, digits = 1) |>
   select(-Uu,-Vv)|>
   pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "data_cap_percent") |>
-  mutate(param = factor(param))
+  mutate(param = factor(param),
+         year = year(date),
+         quarter = quarter(date)) |>
+  select(-date)
+
+data_cap_qtr_wide <- data_cap_qtr |> pivot_wider(names_from = "quarter", values_from = data_cap_percent)
 
 data_cap_season <- timeAverage(data_24hr_wide,
                                 avg.time = "season",
@@ -300,13 +306,39 @@ data_cap_season <- timeAverage(data_24hr_wide,
   mutate_if(is.numeric, round, digits = 1) |>
   select(-Uu,-Vv)|>
   pivot_longer(cols = where(is.numeric), names_to = "param", values_to = "data_cap_percent") |>
-  mutate(param = factor(param))
+  mutate(param = factor(param),
+         year = year(date)) |>
+  select(-date)
 
-saveRDS(data_cap_1m, file = "data/data_cap_1m.rds")
-saveRDS(data_cap_1y, file = "data/data_cap_1y.rds")
-saveRDS(data_cap_qtr, file = "data/data_qtr_season.rds")
-saveRDS(data_cap_season, file = "data/data_cap_season.rds")
+#------------------------------------------------------
+# combine data with data capture: data_1m, data_1y, data_qtr, and  data_season
+#------------------------------------------------------
 
+data_1m <- data_1m |> left_join(data_cap_1m)
+
+data_qtr <- data_qtr |> left_join(data_cap_qtr)
+
+data_season <- data_qtr |> left_join(data_cap_season)
+
+data_1y <- data_1y |>
+  left_join(data_cap_1y) |>
+  left_join(data_cap_qtr_wide) |>
+  rename(annual_data_capture = data_cap_percent,
+         q1_data_capture = `1`,
+         q2_data_capture = `2`,
+         q3_data_capture = `3`,
+         q4_data_capture = `4`)
+
+#------------------------------------------------------
+# save data sets (with data capture where applicable):
+#------------------------------------------------------
+
+saveRDS(data_1hr, file = "data/data_1hr.rds")
+saveRDS(data_24hr, file = "data/data_24hr.rds")
+saveRDS(data_1m, file = "data/data_1m.rds")
+saveRDS(data_1y, file = "data/data_1y.rds")
+saveRDS(data_qtr, file = "data/data_qtr.rds")
+saveRDS(data_season, file = "data/data_season.rds")
 
 #------------------------------------------------------
 # clean up
@@ -314,6 +346,7 @@ saveRDS(data_cap_season, file = "data/data_cap_season.rds")
 
 rm(list = ls(pattern = "wide"))
 rm(list = ls(pattern = "meta"))
+rm(list = ls(pattern = "data_cap"))
 rm(tfee)
 
 #------------------------------------------------------
