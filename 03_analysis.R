@@ -482,6 +482,7 @@ ggsave("percent_above_aqo_plot.png",
 #------------------------------------------------------------------------
 #Percent above or below threshold
 #------------------------------------------------------------------------
+my_colours3 <- RColorBrewer::brewer.pal(n = 9, name = "Set1")[c(1,2,3,4,5,6,7)]
 
 PERCENT_THRESHOLD <-percent_above_below_threshold %>%
   filter(year >= 2015, !(param == "pm25" & objective_type %in% c("annual_caaqs", "24hr_caaqs"))) %>%
@@ -503,14 +504,7 @@ PERCENT_THRESHOLD <-percent_above_below_threshold %>%
     colour = "Pollutant"
   ) +
   scale_color_manual(
-    values = c(
-      "pm25_annual_aqo" = "deepskyblue4",
-      "pm25_24hr_prov_aqo" = "deepskyblue3",
-      "no2_annual_caaqs" = "darkgreen",
-      "no2_1hr_caaqs" = "seagreen",
-      "so2_annual_caaqs" = "yellow3",
-      "so2_1hr_caaqs" = "goldenrod",
-      "o3_8hr_caaqs" = "purple"),
+    values = my_colours3,
     labels = c(
       expression(PM[2.5] ~ " - Annual"),
       expression(PM[2.5] ~ " - 24-hr"),
@@ -520,7 +514,14 @@ PERCENT_THRESHOLD <-percent_above_below_threshold %>%
       expression(SO[2] ~ " - 1-hr"),
       expression(O[3] ~ " - 8-hr")
     )
-  )
+  ) +
+  theme_bw() +
+  theme(legend.position = "right",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid = element_blank())
 
 
 PERCENT_THRESHOLD
