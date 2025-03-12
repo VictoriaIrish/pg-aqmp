@@ -290,11 +290,17 @@ PROVINCE_PG_ADVISORY_PLOT <- ADVISORYDAYS %>%
     values = c("PrinceGeorge" = "salmon", "Province" = "seagreen3"), # Custom colors
     labels = c("Prince George", "Province")  # Custom legend labels
   ) +
-  labs(title = expression(paste("Total number of Advisory Days (for ", PM[10], " and ", PM[2.5], ")")),
-       x = "Year",
-       y = "Number of Advisory Days",
+  labs(x = "Year",
+       y = "Total number of advisory days",
        fill = " ") +
-  scale_x_continuous(breaks = ADVISORYDAYS$Year)
+  scale_x_continuous(breaks = ADVISORYDAYS$Year) +
+  theme_bw() +
+  theme(legend.position = "right",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid = element_blank())
 
 PROVINCE_PG_ADVISORY_PLOT
 
