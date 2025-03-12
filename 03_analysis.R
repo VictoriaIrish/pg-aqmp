@@ -229,6 +229,10 @@ dev.off()
 #------------------------------------------------------------------------
 #ADVISORY DAYS
 #------------------------------------------------------------------------
+library(RColorBrewer)
+my_colours <- RColorBrewer::brewer.pal(n = 9, name = "Set1")[c(9,2)]
+
+my_colours2 <- RColorBrewer::brewer.pal(n = 9, name = "Set1")[c(3,6,5,2)]
 
 #Plot advisory days
 PROVINCE_PG_OMINECA_ADVISORY_PLOT <- ADVISORYDAYS %>%
@@ -287,7 +291,7 @@ PROVINCE_PG_ADVISORY_PLOT <- ADVISORYDAYS %>%
   ggplot(aes(x = Year, y = AdvisoryDays, fill = Region)) +
   geom_bar(stat = "identity", position = "identity") +
   scale_fill_manual(
-    values = c("PrinceGeorge" = "salmon", "Province" = "seagreen3"), # Custom colors
+    values = my_colours, # Custom colors
     labels = c("Prince George", "Province")  # Custom legend labels
   ) +
   labs(x = "Year",
@@ -535,7 +539,7 @@ ggsave("percent_threshold.png",
 #--------------------------------------------------------------------------
 
 DAILY_EXCEEDANCE_PM10_TRS <- daily_exceedance_pm10_trs %>%
-  filter(type_exceed == "day") %>%
+  filter(type_exceed == "day", data_capture == "yes") %>%
   ggplot(aes(x = year, y = value, fill = param)) +
   geom_bar(stat = "identity", position = "dodge") +
   geom_text(aes(label = value),
@@ -543,7 +547,9 @@ DAILY_EXCEEDANCE_PM10_TRS <- daily_exceedance_pm10_trs %>%
             vjust = -0.5) +  # Adjust the vertical position of the text
   labs(x = "Year", y = "Number of daily exceedances per year", fill = "Parameter") +
   scale_fill_manual(values = c("pm10" = "blue", "trs" = "seagreen"),
-                    labels = c(expression(PM[10]), "TRS"))  # Adjust this as needed
+                    labels = c(expression(PM[10]), "TRS")) + # Adjust this as needed
+  scale_x_continuous(breaks = daily_exceedance_pm10_trs$year)
+
 
 DAILY_EXCEEDANCE_PM10_TRS
 
@@ -561,7 +567,7 @@ ggsave("daily_exceedance_pm10_trs.png",
 #-----------------------------------------------------------------------------
 
 DAILY_HRLY_EXCEEDANCE_TRS <- daily_exceedance_pm10_trs %>%
-  filter(param == "trs") %>%
+  filter(param == "trs", data_capture == "yes") %>%
   ggplot(aes(x = year, y = value, fill = type_exceed)) +
   geom_bar(stat = "identity", position = "dodge") +
   geom_text(aes(label = value),
@@ -569,7 +575,8 @@ DAILY_HRLY_EXCEEDANCE_TRS <- daily_exceedance_pm10_trs %>%
             vjust = -0.5) +  # Adjust the vertical position of the text
   labs(x = "Year", y = "Number of exceedances per year", fill = "Metric") +
   scale_fill_manual(values = c("day" = "blue", "hr" = "seagreen"),
-                    labels = c("24-hr", "1-hr"))  # Adjust this as needed
+                    labels = c("24-hr", "1-hr")) + # Adjust this as needed
+  scale_x_continuous(breaks = daily_exceedance_pm10_trs$year)
 
 DAILY_HRLY_EXCEEDANCE_TRS
 
@@ -587,12 +594,23 @@ ggsave("daily_hrly_exceedance_trs.png",
 #-------------------------------------------------------------------------------
 
 DAILY_EXCEEDANCE_PM10 <- daily_exceedance_pm10_trs %>%
-  filter(param == "pm10", type_exceed == "day") %>%
+  filter(param == "pm10", type_exceed == "day", data_capture == "yes") %>%
   ggplot(aes(x = year, y = value)) +
-  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity", fill = brewer.pal(9, "Set1")[2]) +
   geom_text(aes(label = value),
             vjust = -0.5) +
-  labs(x = "Year", y = expression(paste("Number of daily ", PM[10], " exceedances per year")), fill = "Metric")
+  labs(x = "Year",
+       y = expression(paste("Number of daily ", PM[10], " exceedances per year")),
+       fill = "Metric",
+       caption = "*2017, 2018, 2020 and 2024 were years with insufficient data capture") +
+  scale_x_continuous(breaks = 2015:2024, limits = c(2014.5, 2024)) +
+  theme_bw() +
+  theme(legend.position = "right",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid = element_blank())
 
 DAILY_EXCEEDANCE_PM10
 
