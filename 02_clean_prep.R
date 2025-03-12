@@ -322,12 +322,12 @@ rm(tfee)
 
 #Make dataframe of number of advisory days (recorded on LAN) in province,omineca peace region, and PG - don't have 2015 because there is no advisory day data for PG
 ADVISORYDAYS <- data.frame(
-  Year = c(2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024),
-  Province = c(52, 61, 60, 50, 26, 35, 58, 62, 38),
-  OminecaPeace = c(27, 29, 29, 30, 7, 13, 34, 22, 27),
-  PrinceGeorge = c(4, 3, 6, 14, 3, 2, 1, 8, 16),
-  PrinceGeorgepm25 = c(0, 2, 6, 7, 2, 1, 0, 1, 6),
-  PrinceGeorgepm10 = c(4, 1, 0, 7, 1, 1, 1, 7, 10)
+  Year = c(2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024),
+  Province = c(25, 52, 61, 60, 50, 26, 35, 58, 62, 38),
+  OminecaPeace = c(9, 27, 29, 29, 30, 7, 13, 34, 22, 27),
+  PrinceGeorge = c(5, 10, 4, 15, 19, 3, 8, 9, 14, 16),
+  PrinceGeorgepm25 = c(5, 4, 2, 10, 8, 2, 7, 7, 1, 6),
+  PrinceGeorgepm10 = c(0, 6, 2, 5, 11, 1, 1, 2, 13, 10)
 )
 
 #Pivot long
