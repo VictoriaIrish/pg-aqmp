@@ -26,7 +26,7 @@ ann_avg_data <- data_1y %>%
     is.na(value) ~ NA,
     TRUE ~ value))
 
-ggplot(data = , aes(x = year, y = value)) +
+ggplot(data = ann_avg_data, aes(x = year, y = value)) +
   geom_line() +
   geom_point() +
   labs(xlab = "",
