@@ -722,7 +722,7 @@ comparison <- total_advisories_per_year %>%
   )
 
 # Filter communities with a similar number of advisory days (difference <= threshold)
-threshold <- 5  # Set the threshold for "similarity"
+threshold <- 3  # Set the threshold for "similarity"
 similar_communities <- comparison %>%
   filter(difference <= threshold, Community.x != community_of_interest) %>%
   select(Community.x, `Calendar Year`, total_advisories, difference)
@@ -771,6 +771,36 @@ ggplot(comparison, aes(x = `Calendar Year`, y = total_advisories, color = Commun
   theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels for readability
+  )
+
+# Bar plot for communities with similar advisory days to Prince George
+ggplot(similar_communities, aes(x = `Calendar Year`, y = total_advisories, fill = Community.x)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Communities with Advisory Days Similar to Prince George",
+    x = "Calendar Year",
+    y = "Total Advisory Days",
+    fill = "Community"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
+  )
+
+
+# Line plot for communities with similar advisory days
+ggplot(similar_communities, aes(x = `Calendar Year`, y = total_advisories, color = Community.x, group = Community.x)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Communities with Advisory Days Similar to Prince George",
+    x = "Calendar Year",
+    y = "Total Advisory Days",
+    color = "Community"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1)  # Rotate x-axis labels for readability
   )
 
 
