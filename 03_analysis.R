@@ -702,7 +702,88 @@ ggplot(total_advisories_per_year, aes(x = `Calendar Year`, y = total_advisories,
     axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels for readability
   )
 
+##-----------------------------------------------------------------------
+#Communities similar to PG
+#----------------------------------------------------------------------------
 
+# Define the community of interest
+community_of_interest <- "Prince George"
+
+# Filter the data for Prince George and calculate its total advisories per year
+prince_george_totals <- total_advisories_per_year %>%
+  filter(Community == community_of_interest) %>%
+  rename(prince_george_advisories = total_advisories)
+
+# Join the data for all communities with the Prince George totals by year
+comparison <- total_advisories_per_year %>%
+  left_join(prince_george_totals, by = "Calendar Year") %>%
+  mutate(
+    difference = abs(total_advisories - prince_george_advisories) # Calculate absolute difference
+  )
+
+# Filter communities with a similar number of advisory days (difference <= threshold)
+threshold <- 5  # Set the threshold for "similarity"
+similar_communities <- comparison %>%
+  filter(difference <= threshold, Community.x != community_of_interest) %>%
+  select(Community.x, `Calendar Year`, total_advisories, difference)
+
+# View the similar communities
+print(similar_communities)
+
+# Bar plot of communities similar to PG
+ggplot(comparison, aes(x = `Calendar Year`, y = total_advisories, fill = Community.x)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Total Advisory Days by Community (Including Prince George)",
+    x = "Calendar Year",
+    y = "Total Advisory Days",
+    fill = "Community"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels for readability
+  )
+
+# Line plot
+ggplot(comparison, aes(x = `Calendar Year`, y = total_advisories, color = Community.x, group = Community.x)) +
+  geom_line(size = 1) +
+  geom_point(size = 2) +
+  labs(
+    title = "Advisory Trends Over Time (Including Prince George)",
+    x = "Calendar Year",
+    y = "Total Advisory Days",
+    color = "Community"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels for readability
+  )
+
+# Scatter plot highlighting Prince George and similar communities
+ggplot(comparison, aes(x = `Calendar Year`, y = total_advisories, color = Community.x)) +
+  geom_point(size = 3) +
+  labs(
+    title = "Communities with Advisory Days Similar to Prince George",
+    x = "Calendar Year",
+    y = "Total Advisory Days",
+    color = "Community"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels for readability
+  )
+
+
+# Scatter plot highlighting communities with minimal differences
+ggplot(similar_communities, aes(x = `Calendar Year`, y = total_advisories, color = Community.x)) +
+  geom_point(size = 3) +
+  labs(
+    title = "Communities with Similar Advisory Days to Prince George",
+    x = "Calendar Year",
+    y = "Total Advisory Days",
+    color = "Community"
+  ) +
+  theme_minimal()
 
 
 # #-------------------------------------------------------------------------
