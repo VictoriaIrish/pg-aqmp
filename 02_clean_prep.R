@@ -353,3 +353,11 @@ save(percent_above_below_threshold, file = "data/percent_above_below_threshold.r
 daily_exceedance_pm10_trs <- read_xlsx("C:/R_working_directory/pg-aqmp/data/number_daily_exceedances_pm10_trs.xlsx")
 
 save(daily_exceedance_pm10_trs, file = "data/daily_exceedance_pm10_trs.rds")
+
+#--------------------------------------------------------------------------
+#Load in number of advisories per community
+#--------------------------------------------------------------------------
+
+community_advisories <- read_xlsx("C:/R_working_directory/pg-aqmp/data/Advisories_per_community_BC.xlsx")
+
+save(community_advisories, file = "data/community_advisories.rds")
