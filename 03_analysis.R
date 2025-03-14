@@ -15,6 +15,7 @@ library(ggplot2)
 library(dplyr)
 library(lubridate)
 library(scales)
+library(RColorBrewer)
 
 #Make a figure_path
 figure_path <- file.path("C:", "R_working_directory", "pg-aqmp", "Figures")
@@ -229,7 +230,7 @@ dev.off()
 #------------------------------------------------------------------------
 #ADVISORY DAYS
 #------------------------------------------------------------------------
-library(RColorBrewer)
+
 my_colours <- RColorBrewer::brewer.pal(n = 9, name = "Set1")[c(9,2)]
 
 my_colours2 <- RColorBrewer::brewer.pal(n = 9, name = "Set1")[c(3,6,5,2)]
@@ -590,6 +591,44 @@ ggsave("daily_hrly_exceedance_trs.png",
        dpi = 300
 )
 
+
+# Calculate number of odour days per year
+odour_days_per_year <- data_1hr %>%
+  filter(param == "trs") %>%                # Filter for rows where param is "trs"
+  group_by(date) %>%                        # Group by date
+  summarize(odour_day = any(rounded_value > 2)) %>%  # Check if TRS exceeds 2 on that date
+  ungroup() %>%
+  mutate(year = as.integer(format(date, "%Y"))) %>%  # Extract the year
+  group_by(year) %>%                         # Group by year
+  summarize(num_odour_days = sum(odour_day, na.rm = TRUE)) # Count odour days per year
+
+# Filter daily_exceedance_pm10_trs for the required conditions
+filtered_exceedance <- daily_exceedance_pm10_trs %>%
+  filter(param == "trs", type_exceed == "day") %>%
+  select(year, data_capture) # Keep only relevant columns
+
+# Perform a left join with odour_days_per_year
+result_df <- odour_days_per_year %>%
+  left_join(filtered_exceedance, by = "year")
+
+# Plot the results
+result_df %>%
+  filter(data_capture == "yes") %>%
+  ggplot(aes(x = year, y = num_odour_days)) +
+  geom_bar(stat = "identity", fill = brewer.pal(9, "Set1")[2]) +
+  labs(x = "Year",
+       y = "Number of Odour Days",
+       caption = "*2016, 2017 and 2021 were years with insufficient data capture"
+  ) +
+  scale_x_continuous(breaks = 2015:2024, limits = c(2014.5, 2024.5)) +
+  theme_bw() +
+  theme(legend.position = "right",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid = element_blank())
+
 #-------------------------------------------------------------------------------
 # plot of pm10  exceedances
 #-------------------------------------------------------------------------------
@@ -604,7 +643,7 @@ DAILY_EXCEEDANCE_PM10 <- daily_exceedance_pm10_trs %>%
        y = expression(paste("Number of daily ", PM[10], " exceedances per year")),
        fill = "Metric",
        caption = "*2017, 2018, 2020 and 2024 were years with insufficient data capture") +
-  scale_x_continuous(breaks = 2015:2024, limits = c(2014.5, 2024)) +
+  scale_x_continuous(breaks = 2015:2024, limits = c(2014.5, 2024.5)) +
   theme_bw() +
   theme(legend.position = "right",
         axis.text = element_text(size = 12),
