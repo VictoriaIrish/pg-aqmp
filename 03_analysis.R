@@ -16,6 +16,7 @@ library(dplyr)
 library(lubridate)
 library(scales)
 library(RColorBrewer)
+library(viridis)
 
 #Make a figure_path
 figure_path <- file.path("C:", "R_working_directory", "pg-aqmp", "Figures")
@@ -662,6 +663,47 @@ ggsave("daily_exceedance_pm10.png",
        units = "in",
        dpi = 300
 )
+
+
+#--------------------------------------------------------------------------
+#Number of advisories per community in BC
+#--------------------------------------------------------------------------
+
+# Summarize the total advisories per year for each community
+total_advisories_per_year <- community_advisories %>%
+  group_by(Community, `Calendar Year`) %>%  # Group by Community and Calendar Year
+  summarize(total_advisories = sum(Count, na.rm = TRUE)) %>%  # Sum the Count for each group
+  ungroup()
+
+# Plot the total advisories per year for each community
+ggplot(total_advisories_per_year, aes(x = `Calendar Year`, y = total_advisories, color = Community, group = Community)) +
+  geom_line(size = 1) +  # Line plot
+  geom_point(size = 2) + # Add points to emphasize data points
+  labs(
+    title = "Total Advisories per Year by Community",
+    x = "Calendar Year",
+    y = "Total Advisories",
+    color = "Community"
+  ) +
+  theme_minimal()
+
+# Bar plot with Viridis color palette
+ggplot(total_advisories_per_year, aes(x = `Calendar Year`, y = total_advisories, fill = Community)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_viridis_d(option = "viridis") +  # Use the viridis discrete color palette
+  labs(
+    title = "Total Advisories per Year by Community",
+    x = "Calendar Year",
+    y = "Total Advisories",
+    fill = "Community"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels for readability
+  )
+
+
+
 
 # #-------------------------------------------------------------------------
 # # Days above 24hr CAAQS pm2.5
