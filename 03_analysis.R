@@ -21,6 +21,277 @@ library(viridis)
 #Make a figure_path
 figure_path <- file.path("C:", "R_working_directory", "pg-aqmp", "Figures")
 
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+################## Main figures for PGAIR AQMP #############################
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+
+#---------------------------------------------------------------------------
+#Percent above or below objective for each contaminant
+#---------------------------------------------------------------------------
+
+my_colours3 <- RColorBrewer::brewer.pal(n = 9, name = "Set1")[c(1,2,3,4,5,6,7)]
+
+PERCENT_THRESHOLD <-percent_above_below_threshold %>%
+  filter(year >= 2015, !(param == "pm25" & objective_type %in% c("annual_caaqs", "24hr_caaqs"))) %>%
+  mutate(
+    param_obj_type = factor(paste(param, objective_type, sep = "_"), levels = c("pm25_annual_aqo", "pm25_annual_caaqs", "pm25_24hr_prov_aqo", "pm25_24hr_caaqs", "no2_annual_caaqs", "no2_1hr_caaqs", "so2_annual_caaqs", "so2_1hr_caaqs", "o3_8hr_caaqs"))
+  ) %>%
+  ggplot(aes(x = year, y = percent_above_below_threshold, colour = param_obj_type)) +
+  geom_line() +
+  geom_point() +
+  geom_hline(yintercept = 0, colour = "red", linetype = "dashed") +
+  xlim(2015, 2024) +
+  scale_x_continuous(
+    breaks = 2015:2024,  # Show ticks for each year
+    labels = as.character(2015:2024)  # Optionally convert the ticks to characters for display
+  ) +
+  labs(
+    x = "Year",
+    y = "Percent above or below threshold",
+    colour = "Pollutant"
+  ) +
+  scale_color_manual(
+    values = my_colours3,
+    labels = c(
+      expression(PM[2.5] ~ " - Annual"),
+      expression(PM[2.5] ~ " - 24-hr"),
+      expression(NO[2] ~ " - Annual"),
+      expression(NO[2] ~ " - 1-hr"),
+      expression(SO[2] ~ " - Annual"),
+      expression(SO[2] ~ " - 1-hr"),
+      expression(O[3] ~ " - 8-hr")
+    )
+  ) +
+  theme_bw() +
+  theme(legend.position = "right",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid = element_blank())
+
+
+PERCENT_THRESHOLD
+
+ggsave("percent_threshold.png",
+       plot = PERCENT_THRESHOLD,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
+
+#---------------------------------------------------------------------
+#Number of advisory days
+#---------------------------------------------------------------------
+
+##### OPTION ONE- advisory days in Prince George compared to the Province ########
+
+my_colours <- RColorBrewer::brewer.pal(n = 9, name = "Set1")[c(9,2)]
+
+#Plot advisory days Province and PG only
+PROVINCE_PG_ADVISORY_PLOT <- ADVISORYDAYS %>%
+  filter(Region %in% c("PrinceGeorge", "Province")) %>%
+  ggplot(aes(x = Year, y = AdvisoryDays, fill = Region)) +
+  geom_bar(stat = "identity", position = "identity") +
+  scale_fill_manual(
+    values = my_colours, # Custom colors
+    labels = c("Prince George", "Province")  # Custom legend labels
+  ) +
+  labs(x = "Year",
+       y = "Total number of advisory days",
+       fill = " ") +
+  scale_x_continuous(breaks = ADVISORYDAYS$Year) +
+  theme_bw() +
+  theme(legend.position = "right",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid = element_blank())
+
+PROVINCE_PG_ADVISORY_PLOT
+
+ggsave("PROVINCE_PG_ADVISORY_PLOT.png",
+       plot = PROVINCE_PG_ADVISORY_PLOT,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
+
+########### OPTION TWO - advisory days in only Prince George #####################
+
+#Plot advisory days in PG only
+PG_ADVISORY_PLOT <- ADVISORYDAYS %>%
+  filter(Region %in% c("PrinceGeorge")) %>%
+  ggplot(aes(x = Year, y = AdvisoryDays, fill = Region)) +
+  geom_bar(stat = "identity", position = "identity", fill = brewer.pal(9, "Set1")[2]) +
+  labs(x = "Year",
+       y = "Total number of advisory days in Prince George",
+       fill = " ") +
+  scale_x_continuous(breaks = ADVISORYDAYS$Year) +
+  theme_bw() +
+  theme(legend.position = "right",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid = element_blank())
+
+PG_ADVISORY_PLOT
+
+ggsave("PG_ADVISORY_PLOT.png",
+       plot = PROVINCE_PG_ADVISORY_PLOT,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
+
+######## OPTION THREE - advisory days for all communities in Province #######
+
+#Plot advisory days for all communities
+
+# Summarize the total advisories per year for each community
+total_advisories_per_year <- community_advisories %>%
+  group_by(Community, `Calendar Year`) %>%  # Group by Community and Calendar Year
+  summarize(total_advisories = sum(Count, na.rm = TRUE)) %>%  # Sum the Count for each group
+  ungroup()
+
+
+# Bar plot
+ALL_COMMUNITIES_ADVISORY_PLOT <- ggplot(total_advisories_per_year, aes(x = `Calendar Year`, y = total_advisories, fill = Community)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(
+    values = c("Prince George" = "red")
+  ) +
+  # scale_fill_viridis_d(option = "viridis") +  # Use the viridis discrete color palette
+  labs(
+    title = "Total Advisories per Year by Community",
+    x = "Calendar Year",
+    y = "Total Advisories",
+    fill = "Community"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels for readability
+  ) +
+  scale_x_continuous(breaks = total_advisories_per_year$'Calendar Year', limits = c(2014.5, 2024.4))
+
+ALL_COMMUNITIES_ADVISORY_PLOT
+
+ggsave("ALL_COMMUNITIES_ADVISORY_PLOT.png",
+       plot = ALL_COMMUNITIES_ADVISORY_PLOT,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
+
+#-----------------------------------------------------------------------------
+#Number of odour days per year for TRS in PG
+#-----------------------------------------------------------------------------
+
+# Calculate number of odour days per year
+odour_days_per_year <- data_1hr %>%
+  filter(param == "trs") %>%                # Filter for rows where param is "trs"
+  group_by(date) %>%                        # Group by date
+  summarize(odour_day = any(rounded_value > 2)) %>%  # Check if TRS exceeds 2 on that date
+  ungroup() %>%
+  mutate(year = as.integer(format(date, "%Y"))) %>%  # Extract the year
+  group_by(year) %>%                         # Group by year
+  summarize(num_odour_days = sum(odour_day, na.rm = TRUE)) # Count odour days per year
+
+# Filter daily_exceedance_pm10_trs for the required conditions
+filtered_exceedance <- daily_exceedance_pm10_trs %>%
+  filter(param == "trs", type_exceed == "day") %>%
+  select(year, data_capture) # Keep only relevant columns
+
+# Perform a left join with odour_days_per_year
+result_df <- odour_days_per_year %>%
+  left_join(filtered_exceedance, by = "year")
+
+# Plot the results
+ODOUR_DAYS_TRS <- result_df %>%
+  filter(data_capture == "yes") %>%
+  ggplot(aes(x = year, y = num_odour_days)) +
+  geom_bar(stat = "identity", fill = brewer.pal(9, "Set1")[2]) +
+  labs(x = "Year",
+       y = "Number of Odour Days",
+       caption = "*2016, 2017 and 2021 were years with insufficient data capture"
+  ) +
+  scale_x_continuous(breaks = 2015:2024, limits = c(2014.5, 2024.5)) +
+  theme_bw() +
+  theme(legend.position = "right",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid = element_blank())
+
+ODOUR_DAYS_TRS
+
+ggsave("ODOUR_DAYS_TRS_PLOT.png",
+       plot = ODOUR_DAYS_TRS,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
+
+#-------------------------------------------------------------------------------
+# plot of pm10  exceedances
+#-------------------------------------------------------------------------------
+
+DAILY_EXCEEDANCE_PM10 <- daily_exceedance_pm10_trs %>%
+  filter(param == "pm10", type_exceed == "day", data_capture == "yes") %>%
+  ggplot(aes(x = year, y = value)) +
+  geom_bar(stat = "identity", fill = brewer.pal(9, "Set1")[2]) +
+  geom_text(aes(label = value),
+            vjust = -0.5) +
+  labs(x = "Year",
+       y = expression(paste("Number of daily ", PM[10], " exceedances per year")),
+       fill = "Metric",
+       caption = "*2017, 2018, 2020 and 2024 were years with insufficient data capture") +
+  scale_x_continuous(breaks = 2015:2024, limits = c(2014.5, 2024.5)) +
+  theme_bw() +
+  theme(legend.position = "right",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid = element_blank())
+
+DAILY_EXCEEDANCE_PM10
+
+ggsave("daily_exceedance_pm10.png",
+       plot = DAILY_EXCEEDANCE_PM10,
+       path = figure_path,
+       width = 10,
+       height = 6,
+       units = "in",
+       dpi = 300
+)
+
+
+
+
+
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+################## Exploration of other figures ############################
+#--------------------------------------------------------------------------
+#--------------------------------------------------------------------------
+
+
 #----------------------------------------------------------------------
 #PM2.5 visualisation
 #----------------------------------------------------------------------
@@ -232,7 +503,7 @@ dev.off()
 #ADVISORY DAYS
 #------------------------------------------------------------------------
 
-my_colours <- RColorBrewer::brewer.pal(n = 9, name = "Set1")[c(9,2)]
+
 
 my_colours2 <- RColorBrewer::brewer.pal(n = 9, name = "Set1")[c(3,6,5,2)]
 
@@ -287,37 +558,7 @@ ggsave("PG_PM_ADVISORY_PLOT.png",
        dpi = 300
 )
 
-#Plot advisory days Province and PG only
-PROVINCE_PG_ADVISORY_PLOT <- ADVISORYDAYS %>%
-  filter(Region %in% c("PrinceGeorge", "Province")) %>%
-  ggplot(aes(x = Year, y = AdvisoryDays, fill = Region)) +
-  geom_bar(stat = "identity", position = "identity") +
-  scale_fill_manual(
-    values = my_colours, # Custom colors
-    labels = c("Prince George", "Province")  # Custom legend labels
-  ) +
-  labs(x = "Year",
-       y = "Total number of advisory days",
-       fill = " ") +
-  scale_x_continuous(breaks = ADVISORYDAYS$Year) +
-  theme_bw() +
-  theme(legend.position = "right",
-        axis.text = element_text(size = 12),
-        axis.title = element_text(size = 16),
-        strip.text.x = element_text(size = 14),
-        legend.text = element_text(size = 12),
-        panel.grid = element_blank())
 
-PROVINCE_PG_ADVISORY_PLOT
-
-ggsave("PROVINCE_PG_ADVISORY_PLOT.png",
-       plot = PROVINCE_PG_ADVISORY_PLOT,
-       path = figure_path,
-       width = 10,
-       height = 6,
-       units = "in",
-       dpi = 300
-)
 #------------------------------------------------------------------------
 #TRS visualisation
 #------------------------------------------------------------------------
@@ -484,58 +725,7 @@ ggsave("percent_above_aqo_plot.png",
 #------------------------------------------------------------------------
 #Percent above or below threshold
 #------------------------------------------------------------------------
-my_colours3 <- RColorBrewer::brewer.pal(n = 9, name = "Set1")[c(1,2,3,4,5,6,7)]
 
-PERCENT_THRESHOLD <-percent_above_below_threshold %>%
-  filter(year >= 2015, !(param == "pm25" & objective_type %in% c("annual_caaqs", "24hr_caaqs"))) %>%
-  mutate(
-    param_obj_type = factor(paste(param, objective_type, sep = "_"), levels = c("pm25_annual_aqo", "pm25_annual_caaqs", "pm25_24hr_prov_aqo", "pm25_24hr_caaqs", "no2_annual_caaqs", "no2_1hr_caaqs", "so2_annual_caaqs", "so2_1hr_caaqs", "o3_8hr_caaqs"))
-    ) %>%
-  ggplot(aes(x = year, y = percent_above_below_threshold, colour = param_obj_type)) +
-  geom_line() +
-  geom_point() +
-  geom_hline(yintercept = 0, colour = "red", linetype = "dashed") +
-  xlim(2015, 2024) +
-  scale_x_continuous(
-    breaks = 2015:2024,  # Show ticks for each year
-    labels = as.character(2015:2024)  # Optionally convert the ticks to characters for display
-  ) +
-  labs(
-    x = "Year",
-    y = "Percent above or below threshold",
-    colour = "Pollutant"
-  ) +
-  scale_color_manual(
-    values = my_colours3,
-    labels = c(
-      expression(PM[2.5] ~ " - Annual"),
-      expression(PM[2.5] ~ " - 24-hr"),
-      expression(NO[2] ~ " - Annual"),
-      expression(NO[2] ~ " - 1-hr"),
-      expression(SO[2] ~ " - Annual"),
-      expression(SO[2] ~ " - 1-hr"),
-      expression(O[3] ~ " - 8-hr")
-    )
-  ) +
-  theme_bw() +
-  theme(legend.position = "right",
-        axis.text = element_text(size = 12),
-        axis.title = element_text(size = 16),
-        strip.text.x = element_text(size = 14),
-        legend.text = element_text(size = 12),
-        panel.grid = element_blank())
-
-
-PERCENT_THRESHOLD
-
-ggsave("percent_threshold.png",
-       plot = PERCENT_THRESHOLD,
-       path = figure_path,
-       width = 10,
-       height = 6,
-       units = "in",
-       dpi = 300
-)
 
 #-------------------------------------------------------------------------
 # bar plot of number of daily exceedances each year for pm10 and trs
@@ -593,88 +783,11 @@ ggsave("daily_hrly_exceedance_trs.png",
 )
 
 
-# Calculate number of odour days per year
-odour_days_per_year <- data_1hr %>%
-  filter(param == "trs") %>%                # Filter for rows where param is "trs"
-  group_by(date) %>%                        # Group by date
-  summarize(odour_day = any(rounded_value > 2)) %>%  # Check if TRS exceeds 2 on that date
-  ungroup() %>%
-  mutate(year = as.integer(format(date, "%Y"))) %>%  # Extract the year
-  group_by(year) %>%                         # Group by year
-  summarize(num_odour_days = sum(odour_day, na.rm = TRUE)) # Count odour days per year
-
-# Filter daily_exceedance_pm10_trs for the required conditions
-filtered_exceedance <- daily_exceedance_pm10_trs %>%
-  filter(param == "trs", type_exceed == "day") %>%
-  select(year, data_capture) # Keep only relevant columns
-
-# Perform a left join with odour_days_per_year
-result_df <- odour_days_per_year %>%
-  left_join(filtered_exceedance, by = "year")
-
-# Plot the results
-result_df %>%
-  filter(data_capture == "yes") %>%
-  ggplot(aes(x = year, y = num_odour_days)) +
-  geom_bar(stat = "identity", fill = brewer.pal(9, "Set1")[2]) +
-  labs(x = "Year",
-       y = "Number of Odour Days",
-       caption = "*2016, 2017 and 2021 were years with insufficient data capture"
-  ) +
-  scale_x_continuous(breaks = 2015:2024, limits = c(2014.5, 2024.5)) +
-  theme_bw() +
-  theme(legend.position = "right",
-        axis.text = element_text(size = 12),
-        axis.title = element_text(size = 16),
-        strip.text.x = element_text(size = 14),
-        legend.text = element_text(size = 12),
-        panel.grid = element_blank())
-
-#-------------------------------------------------------------------------------
-# plot of pm10  exceedances
-#-------------------------------------------------------------------------------
-
-DAILY_EXCEEDANCE_PM10 <- daily_exceedance_pm10_trs %>%
-  filter(param == "pm10", type_exceed == "day", data_capture == "yes") %>%
-  ggplot(aes(x = year, y = value)) +
-  geom_bar(stat = "identity", fill = brewer.pal(9, "Set1")[2]) +
-  geom_text(aes(label = value),
-            vjust = -0.5) +
-  labs(x = "Year",
-       y = expression(paste("Number of daily ", PM[10], " exceedances per year")),
-       fill = "Metric",
-       caption = "*2017, 2018, 2020 and 2024 were years with insufficient data capture") +
-  scale_x_continuous(breaks = 2015:2024, limits = c(2014.5, 2024.5)) +
-  theme_bw() +
-  theme(legend.position = "right",
-        axis.text = element_text(size = 12),
-        axis.title = element_text(size = 16),
-        strip.text.x = element_text(size = 14),
-        legend.text = element_text(size = 12),
-        panel.grid = element_blank())
-
-DAILY_EXCEEDANCE_PM10
-
-ggsave("daily_exceedance_pm10.png",
-       plot = DAILY_EXCEEDANCE_PM10,
-       path = figure_path,
-       width = 10,
-       height = 6,
-       units = "in",
-       dpi = 300
-)
 
 
 #--------------------------------------------------------------------------
 #Number of advisories per community in BC
 #--------------------------------------------------------------------------
-
-# Summarize the total advisories per year for each community
-total_advisories_per_year <- community_advisories %>%
-  group_by(Community, `Calendar Year`) %>%  # Group by Community and Calendar Year
-  summarize(total_advisories = sum(Count, na.rm = TRUE)) %>%  # Sum the Count for each group
-  ungroup()
-
 # Plot the total advisories per year for each community
 ggplot(total_advisories_per_year, aes(x = `Calendar Year`, y = total_advisories, color = Community, group = Community)) +
   geom_line(size = 1) +  # Line plot
@@ -687,20 +800,6 @@ ggplot(total_advisories_per_year, aes(x = `Calendar Year`, y = total_advisories,
   ) +
   theme_minimal()
 
-# Bar plot with Viridis color palette
-ggplot(total_advisories_per_year, aes(x = `Calendar Year`, y = total_advisories, fill = Community)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  scale_fill_viridis_d(option = "viridis") +  # Use the viridis discrete color palette
-  labs(
-    title = "Total Advisories per Year by Community",
-    x = "Calendar Year",
-    y = "Total Advisories",
-    fill = "Community"
-  ) +
-  theme_minimal() +
-  theme(
-    axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels for readability
-  )
 
 ##-----------------------------------------------------------------------
 #Communities similar to PG
