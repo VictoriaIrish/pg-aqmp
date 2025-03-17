@@ -75,7 +75,7 @@ PERCENT_THRESHOLD <-percent_above_below_threshold %>%
 
 PERCENT_THRESHOLD
 
-ggsave("percent_threshold.png",
+ggsave("PERCENT_ABOVE_BELOW_THRESHOLD.png",
        plot = PERCENT_THRESHOLD,
        path = figure_path,
        width = 10,
@@ -146,7 +146,7 @@ PG_ADVISORY_PLOT <- ADVISORYDAYS %>%
 PG_ADVISORY_PLOT
 
 ggsave("PG_ADVISORY_PLOT.png",
-       plot = PROVINCE_PG_ADVISORY_PLOT,
+       plot = PG_ADVISORY_PLOT,
        path = figure_path,
        width = 10,
        height = 6,
@@ -178,11 +178,17 @@ ALL_COMMUNITIES_ADVISORY_PLOT <- ggplot(total_advisories_per_year, aes(x = `Cale
     y = "Total Advisories",
     fill = "Community"
   ) +
-  theme_minimal() +
   theme(
     axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis labels for readability
   ) +
-  scale_x_continuous(breaks = total_advisories_per_year$'Calendar Year', limits = c(2014.5, 2024.4))
+  scale_x_continuous(breaks = total_advisories_per_year$'Calendar Year', limits = c(2014.5, 2024.4)) +
+  theme_bw() +
+  theme(legend.position = "right",
+        axis.text = element_text(size = 12),
+        axis.title = element_text(size = 16),
+        strip.text.x = element_text(size = 14),
+        legend.text = element_text(size = 12),
+        panel.grid = element_blank())
 
 ALL_COMMUNITIES_ADVISORY_PLOT
 
@@ -248,7 +254,7 @@ ggsave("ODOUR_DAYS_TRS_PLOT.png",
 )
 
 #-------------------------------------------------------------------------------
-# plot of pm10  exceedances
+# plot of pm10 exceedances
 #-------------------------------------------------------------------------------
 
 DAILY_EXCEEDANCE_PM10 <- daily_exceedance_pm10_trs %>%
